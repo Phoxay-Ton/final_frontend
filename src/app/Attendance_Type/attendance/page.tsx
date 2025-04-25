@@ -1,10 +1,12 @@
 import Image from "next/image";
 import { FaBell, FaUser, FaHome, FaEdit, FaTrash, FaPlus, FaSearch, FaChartBar, FaGavel, FaSignOutAlt } from "react-icons/fa";
 import Img from "/public/img/login.jpeg";
+import { useRouter } from 'next/navigation'
 
 
 
 export default function Dashboard() {
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
@@ -67,55 +69,75 @@ export default function Dashboard() {
             <FaUser className="text-lg" />
           </div>
         </header>
-        {/* Breadcrumb */}
-        <div className="bg-gray-100 p-4 text-sm text-gray-600 font-saysettha">
-              ໜ້າຫຼັກ / <span className="text-gray-800 font-semibold">ຂະແໜງ</span>
+
+
+
+        <div className="mt-6 bg-white p-6 rounded-lg shadow-lg  font-saysettha ">
+          {/* Main Content */}
+          <main className="flex-1 flex flex-col">
+
+            {/* Breadcrumb */}
+            <div className="bg-gray-100 p-4 text-sm text-gray-600">
+              ໜ້າຫຼັກ / <span className="text-gray-800 font-semibold">ເຂົາ-ອອກວຽກ</span>
             </div>
 
-        <div className="mt-6 bg-white p-6 rounded-lg shadow-lg ">
-          <div className="flex justify-between items-center bg-yellow-100 p-6">
-            <h3 className="text-xl font-bold text-black  font-saysettha">ຂະແໜງ</h3>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 font-saysettha">
-              <a href="/Division/add_division"><FaPlus /> <span>ເພີ່ມຂະແໝງ</span></a>
-            </button>
-          </div>
+            {/* Form */}
+            <section className="p-6 bg-white mx-6 rounded shadow">
+              <h2 className="text-lg font-semibold mb-4 text-black">ເຂົ້າ-ອອກວຽກ</h2>
 
+              <table className="w-full table-auto border mb-4 text-black ">
+                <thead className="bg-gray-200">
+                  <tr>
+                    <th className="border p-2">ວັນທີ</th>
+                    <th className="border p-2">ເວລາເຂົ້າ</th>
+                    <th className="border p-2">ເວລາອອກ</th>
+                    <th className="border p-2">ສະຖານະ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="border p-2">-</td>
+                    <td className="border p-2">-</td>
+                    <td className="border p-2">-</td>
+                    <td className="border p-2">-</td>
+                  </tr>
+                  <tr>
+                    <td className="border p-2">-</td>
+                    <td className="border p-2">-</td>
+                    <td className="border p-2">-</td>
+                    <td className="border p-2">-</td>
+                  </tr>
+                  <tr>
+                    <td className="border p-2">-</td>
+                    <td className="border p-2">-</td>
+                    <td className="border p-2">-</td>
+                    <td className="border p-2">-</td>
+                  </tr>
+                </tbody>
+              </table>
 
+              <div className="flex items-center p-4">
+                <select className=" block text-gray-700 p-2 border rounded w-1/2 font-saysettha">
+                  <option>ໝາຍເຫດ</option>
+                  <option>ມາຕົງເວລາ</option>
+                  <option>ມາຊ້າ</option>
+                </select>
+              </div>
 
-          {/* Task Table */}
-          <div className="mt-6 overflow-x-auto">
-            <table className="w-full border-collapse border rounded-lg shadow-md">
-              <thead className="bg-gray-200 text-black font-saysettha">
-                <tr>
-                  <th className="p-3 text-left">ຊື່ພະນັກງານ</th>
-                  <th className="p-3 text-left">ອີເມວ</th>
-                  <th className="p-3 text-left">ເບີໂທ</th>
-                  <th className="p-3 text-left">ຂະແໝງ</th>
-                  <th className="p-3 text-left">ຕຳແໝ່ງ</th>
-                  <th className="p-3 text-left">ຜູ້ໃຊ້</th>
-                  <th className="p-3 text-left">ແກ້ໄຂ</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-t text-black">
-                  <td className="p-3">Email Management & Communication</td>
-                  <td className="p-3">19/03/2024</td>
-                  <td className="p-3">21/03/2024</td>
-                  <td className="p-3">Secretaries</td>
-                  <td className="p-3">Phounphonnakhone</td>
-                  <td className="p-3 text-blue-600">To-Do</td>
-                  <td className="p-3 flex space-x-2">
-                    <FaEdit className="text-yellow-500 cursor-pointer" />
-                    <FaTrash className="text-red-500 cursor-pointer" />
-                  </td>
-                </tr>
-                {/* More rows can be added here */}
-              </tbody>
-            </table>
-          </div>
+              
+            </section>
+          </main>
+          <div className="flex justify-center p-4">
+                <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 p-5">
+                  ກົດເຂົ້າວຽກ
+                </button>
+                <button className="bg-red-400 text-white px-4 py-2 rounded hover:bg-red-500">
+                  ກົດອອກວຽກ
+                </button>
+              </div>
 
           {/* Footer */}
-          <footer className="bg-gray-200 p-4 text-center">ກັບໄປໜ້າ admin</footer>
+          <a href="/admin"><footer className="bg-gray-200 p-4 text-center text-black mt-20 font-saysettha">ກັບໄປໜ້າ admin</footer></a>
         </div>
       </div>
     </div>

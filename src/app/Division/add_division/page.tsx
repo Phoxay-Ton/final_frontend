@@ -1,10 +1,36 @@
-import Image from "next/image";
-import { FaBell, FaUser, FaHome, FaEdit, FaTrash, FaPlus, FaSearch, FaChartBar, FaGavel, FaSignOutAlt } from "react-icons/fa";
+'use client';
+
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState, ChangeEvent } from 'react';
+import { FaBell, FaUser, FaGavel, FaSignOutAlt, FaChartBar } from 'react-icons/fa';
 import Img from "/public/img/login.jpeg";
 
+interface Task {
+  title: string;
+  startDate: string;
+  endDate: string;
+  category: string;
+  problem: string;
+  details: string;
+}
 
+export default function AddManageTasks() {
+  const router = useRouter();
+  const [task, setTask] = useState<Task>({
+    title: '',
+    startDate: '',
+    endDate: '',
+    category: '',
+    problem: '',
+    details: '',
+  });
 
-export default function Dashboard() {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setTask({ ...task, [e.target.name]: e.target.value });
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
@@ -58,10 +84,10 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col font-saysettha">
         {/* Header */}
         <header className="bg-blue-800 text-white p-4 flex justify-between items-center">
-          <h1 className="text-lg font-bold  font-saysettha">ລະບົບຕິດຕາມວຽກ</h1>
+          <h1 className="text-lg font-bold">ລະບົບຕິດຕາມວຽກ</h1>
           <div className="flex items-center space-x-4">
             <FaBell className="text-lg" />
             <FaUser className="text-lg" />
@@ -69,57 +95,29 @@ export default function Dashboard() {
         </header>
         {/* Breadcrumb */}
         <div className="bg-gray-100 p-4 text-sm text-gray-600 font-saysettha">
-              ໜ້າຫຼັກ / <span className="text-gray-800 font-semibold">ຂະແໜງ</span>
+          ໜ້າຫຼັກ / <span className="text-gray-800 ">ຂະແໜງ / </span>
+          <span className="text-gray-800 font-semibold">ເພີ່ມຂະແໝງ</span>
+        </div>
+
+        {/* Form */}
+        <div className="p-6 font-saysettha ">
+          <h2 className="text-xl font-bold text-gray-700">ເພີ່ມຂະແໝງ</h2>
+          <div className="grid mt-4" >
+            <div className="bg-gray-100 p-6 rounded-md shadow-md ">
+              <input type="text" name="title" className="w-full p-2 mb-3 border text-black  rounded-full border-gray-300" placeholder="ຊື່ຂະແໝງ" />
+              <input type="text" name="title" className="w-full p-2 mb-3 border text-black  rounded-full border-gray-300" placeholder="ທີ່ຢູ່" />
+              <input type="text" name="title" className="w-full p-2 mb-3 border text-black  rounded-full border-gray-300" placeholder="ເບີໂທ" />
+              <input type="text" name="title" className="w-full p-2 mb-3 border text-black  rounded-full border-gray-300" placeholder="ອີເມວ" />
+              <input type="text" name="title" className="w-full p-2 mb-3 border text-black  rounded-full border-gray-300" placeholder="ຊື່ຜູ້ໃຊ້" />
+              <div className="mt-4 flex  space-x-4 font-saysettha">
+                <button onClick={() => alert('ບັນທຶກສຳເລັດ!')} className="bg-purple-500 text-white px-10 py-2 rounded-full">ບັນທຶກ</button>
+                <button onClick={() => router.push('/Division')} className="bg-orange-500 text-white px-10 py-2 rounded-full">ຍົກເລີກ</button>
+              </div> {/* Footer */}
+              <a href="/admin"><footer className="bg-gray-200 p-4 text-center text-black mt-20 font-saysettha">ກັບໄປໜ້າ admin</footer></a>
             </div>
-
-        <div className="mt-6 bg-white p-6 rounded-lg shadow-lg ">
-          <div className="flex justify-between items-center bg-yellow-100 p-6">
-            <h3 className="text-xl font-bold text-black  font-saysettha">ຂະແໜງ</h3>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 font-saysettha">
-              <a href="/Division/add_division"><FaPlus /> <span>ເພີ່ມຂະແໝງ</span></a>
-            </button>
           </div>
-
-
-
-          {/* Task Table */}
-          <div className="mt-6 overflow-x-auto">
-            <table className="w-full border-collapse border rounded-lg shadow-md">
-              <thead className="bg-gray-200 text-black font-saysettha">
-                <tr>
-                  <th className="p-3 text-left">ຊື່ພະນັກງານ</th>
-                  <th className="p-3 text-left">ອີເມວ</th>
-                  <th className="p-3 text-left">ເບີໂທ</th>
-                  <th className="p-3 text-left">ຂະແໝງ</th>
-                  <th className="p-3 text-left">ຕຳແໝ່ງ</th>
-                  <th className="p-3 text-left">ຜູ້ໃຊ້</th>
-                  <th className="p-3 text-left">ແກ້ໄຂ</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-t text-black">
-                  <td className="p-3">Email Management & Communication</td>
-                  <td className="p-3">19/03/2024</td>
-                  <td className="p-3">21/03/2024</td>
-                  <td className="p-3">Secretaries</td>
-                  <td className="p-3">Phounphonnakhone</td>
-                  <td className="p-3 text-blue-600">To-Do</td>
-                  <td className="p-3 flex space-x-2">
-                    <FaEdit className="text-yellow-500 cursor-pointer" />
-                    <FaTrash className="text-red-500 cursor-pointer" />
-                  </td>
-                </tr>
-                {/* More rows can be added here */}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Footer */}
-          <footer className="bg-gray-200 p-4 text-center">ກັບໄປໜ້າ admin</footer>
         </div>
       </div>
     </div>
-
   );
 }
-

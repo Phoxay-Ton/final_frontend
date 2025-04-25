@@ -67,16 +67,17 @@ export default function Dashboard() {
             <FaUser className="text-lg" />
           </div>
         </header>
+
         {/* Breadcrumb */}
         <div className="bg-gray-100 p-4 text-sm text-gray-600 font-saysettha">
-              ໜ້າຫຼັກ / <span className="text-gray-800 font-semibold">ຂະແໜງ</span>
+              ໜ້າຫຼັກ / <span className="text-gray-800 font-semibold">ຂໍລາພັກ</span>
             </div>
 
         <div className="mt-6 bg-white p-6 rounded-lg shadow-lg ">
           <div className="flex justify-between items-center bg-yellow-100 p-6">
-            <h3 className="text-xl font-bold text-black  font-saysettha">ຂະແໜງ</h3>
+            <h3 className="text-xl font-bold text-black  font-saysettha">ຂໍລາພັກ</h3>
             <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 font-saysettha">
-              <a href="/Division/add_division"><FaPlus /> <span>ເພີ່ມຂະແໝງ</span></a>
+            <a href="/Leave_Type/Leave/app_leave"><FaPlus /> <span>ຂໍລາພັກ</span></a>
             </button>
           </div>
 
