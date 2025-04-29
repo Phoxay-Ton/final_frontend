@@ -76,7 +76,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center bg-yellow-100 p-10">
             <h3 className="text-xl font-bold text-black  font-saysettha">ມອບວຽກ</h3>
             <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 font-saysettha">
-              <a href="/manage_tasks/add_manag_tasks"> <span>+ເພີ່ມວຽກໃຫ້ພະນັກງານ</span></a>
+              <a href="/manage_tasks/add_manag_tasks"> <span><FaPlus />ເພີ່ມວຽກໃຫ້ພະນັກງານ</span></a>
             </button>
           </div>
 

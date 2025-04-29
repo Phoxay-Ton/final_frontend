@@ -11,8 +11,8 @@ export default function Dashboard() {
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
       <div className="w-64 bg-blue-900 text-white p-4 flex flex-col">
-        <div className="flex items-center space-x-2">
-          <Image src={Img} alt="#" width={300} height={300} />
+        <div className="flex items-center space-x-2 ">
+          <Image src={Img} alt="#" className="w-[600px] h-auto" />
         </div>
         <nav className="mt-6 space-y-4 font-saysettha">
           <a href="/admin" className="flex items-center px-4 py-2 rounded bg-blue-800">

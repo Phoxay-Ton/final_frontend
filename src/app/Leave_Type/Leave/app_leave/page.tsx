@@ -7,28 +7,24 @@ import { useState, ChangeEvent } from 'react';
 import { FaBell, FaUser, FaGavel, FaSignOutAlt, FaChartBar } from 'react-icons/fa';
 import Img from "/public/img/login.jpeg";
 
-interface Task {
-  title: string;
+interface AppLeave {
   startDate: string;
   endDate: string;
-  category: string;
-  problem: string;
-  details: string;
+  leaveDays: string;
+  leaveType: string;
 }
 
 export default function AddManageTasks() {
   const router = useRouter();
-  const [task, setTask] = useState<Task>({
-    title: '',
+  const [app_leave, setAppLeave] = useState<AppLeave>({
     startDate: '',
     endDate: '',
-    category: '',
-    problem: '',
-    details: '',
+    leaveDays: '',
+    leaveType: '',
   });
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setTask({ ...task, [e.target.name]: e.target.value });
+  const handleChange = (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => {
+    setAppLeave({ ...app_leave, [e.target.name]: e.target.value });
   };
 
 

@@ -1,36 +1,32 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, ChangeEvent } from 'react';
 import { FaBell, FaUser, FaGavel, FaSignOutAlt, FaChartBar } from 'react-icons/fa';
 import Img from "/public/img/login.jpeg";
 
-interface Task {
-  title: string;
-  startDate: string;
-  endDate: string;
-  category: string;
-  problem: string;
-  details: string;
+interface Department {
+  departmentName: string;
+  phone: string;
+  address: string;
+  email: string;
+  username: string;
 }
 
-export default function AddManageTasks() {
+export default function AddManageDepartment() {
   const router = useRouter();
-  const [task, setTask] = useState<Task>({
-    title: '',
-    startDate: '',
-    endDate: '',
-    category: '',
-    problem: '',
-    details: '',
+  const [department, setDepartment] = useState<Department>({
+    departmentName: '',
+    phone: '',
+    address: '',
+    email: '',
+    username: '',
   });
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setTask({ ...task, [e.target.name]: e.target.value });
+    setDepartment({ ...department, [e.target.name]: e.target.value });
   };
-  
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -40,6 +36,7 @@ export default function AddManageTasks() {
           <Image src={Img} alt="#" width={300} height={300} />
         </div>
         <nav className="mt-6 space-y-4 font-saysettha">
+          {/* Sidebar Links */}
           <a href="/admin" className="flex items-center px-4 py-2 rounded bg-blue-800">
             <FaBell className="mr-2" /> ໝ້າຫຼັກ
           </a>
@@ -58,7 +55,6 @@ export default function AddManageTasks() {
           <a href="/position" className="flex items-center px-4 py-2">
             <FaGavel className="mr-2" /> ຕຳແໝ່ງ
           </a>
-
           <div>
             <a href="#" className="flex items-center px-4 py-2">
               <FaGavel className="mr-2" /> ລາພັກ
@@ -88,36 +84,44 @@ export default function AddManageTasks() {
       <div className="flex-1 flex flex-col font-saysettha">
         {/* Header */}
         <header className="bg-blue-800 text-white p-4 flex justify-between items-center">
-          <h1 className="text-lg font-bold">ລະບົບຕິດຕາມວຽກ</h1>
-          <div className="flex items-center space-x-4 mr-20 ... ">
-            <FaUser className="text-lg mr-20 ..." />admin
+          <h1 className="text-lg font-bold">ລະບົບຈັດການພະແນກ</h1>
+          <div className="flex items-center space-x-4 mr-20">
+            <FaUser className="text-lg mr-2" /> admin
             <FaBell className="text-lg" />
           </div>
         </header>
+
         {/* Breadcrumb */}
         <div className="bg-gray-100 p-4 text-sm text-gray-600 font-saysettha">
-              ໜ້າຫຼັກ / <span className="text-gray-800 ">ພະແນກ / </span>
-              <span className="text-gray-800 font-semibold">ເພີ່ມພະແນກ</span>
-            </div>
+          ໜ້າຫຼັກ / <span className="text-gray-800">ພະແນກ / </span>
+          <span className="text-gray-800 font-semibold">ເພີ່ມພະແນກ</span>
+        </div>
 
         {/* Form */}
-        <div className="p-6 font-saysettha ">
+        <div className="p-6 font-saysettha">
           <h2 className="text-xl font-bold text-gray-700">ເພີ່ມພະແນກ</h2>
-          <div className="grid mt-4" >
-            <div className="bg-gray-100 p-6 rounded-md shadow-md ">
-              <input type="text"  className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ຊື່ ພະນັກງານ" />
-              <input type="text"  className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ເບີໂທ" />
-              <input type="text"  className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ທີ່ຢູ່" />
-              <input type="text"  className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ອີເມວ" />
-              <input type="text"  className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ຊື່ຜູ້ໃຊ້" />       
-              <div className="mt-4 flex  space-x-4 font-saysettha">
+          <div className="grid mt-4">
+            <div className="bg-gray-100 p-6 rounded-md shadow-md">
+              <input type="text" name="departmentName" value={department.departmentName} onChange={handleChange} className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ຊື່ພະແນກ" />
+              <input type="text" name="phone" value={department.phone} onChange={handleChange} className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ເບີໂທ" />
+              <input type="text" name="address" value={department.address} onChange={handleChange} className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ທີ່ຢູ່" />
+              <input type="text" name="email" value={department.email} onChange={handleChange} className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ອີເມວ" />
+              <input type="text" name="username" value={department.username} onChange={handleChange} className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ຊື່ຜູ້ໃຊ້" />
+
+              <div className="mt-4 flex space-x-4 font-saysettha">
                 <button onClick={() => alert('ບັນທຶກສຳເລັດ!')} className="bg-purple-500 text-white px-10 py-2 rounded-full">ບັນທຶກ</button>
                 <button onClick={() => router.push('/department')} className="bg-orange-500 text-white px-10 py-2 rounded-full">ຍົກເລີກ</button>
-              </div>   {/* Footer */}
-            <a href="/admin"><footer className="bg-gray-200 p-4 text-center text-black mt-20 font-saysettha">ກັບໄປໜ້າ admin</footer></a>
-            </div>       
-          </div>         
-        </div>     
+              </div>
+
+              {/* Footer */}
+              <a href="/admin">
+                <footer className="bg-gray-200 p-4 text-center text-black mt-20 font-saysettha">
+                  ກັບໄປໜ້າ admin
+                </footer>
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

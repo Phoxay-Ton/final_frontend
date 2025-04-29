@@ -111,8 +111,12 @@ export default function Dashboard() {
             </table>
           </div>
 
-          {/* Footer */}
-          <footer className="bg-gray-200 p-4 text-center">ກັບໄປໜ້າ admin</footer>
+           {/* Footer */}
+           <a href="/admin">
+                <footer className="bg-gray-200 p-4 text-center text-black mt-20 font-saysettha">
+                  ກັບໄປໜ້າ admin
+                </footer>
+              </a>
         </div>
       </div>
     </div>

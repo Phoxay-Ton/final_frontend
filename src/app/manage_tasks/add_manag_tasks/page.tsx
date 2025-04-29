@@ -8,12 +8,13 @@ import { FaBell, FaUser, FaGavel, FaSignOutAlt, FaChartBar } from 'react-icons/f
 import Img from "/public/img/login.jpeg";
 
 interface Task {
-  title: string;
-  startDate: string;
-  endDate: string;
-  category: string;
-  problem: string;
-  details: string;
+  title: string;          // ຊື່ວຽກ
+  startDate: string;      // ເລີ່ມວັນທີ່
+  endDate: string;        // ກຳນົດສົ່ງ
+  problem: string;        // ວຽກທີ່ມອບໃຫ້
+  details: string;        // ລາຍລະອຽດ
+  employeeName: string;   // ຊື່ພະນັກງານ
+  divisionName: string;   // ຊື່ຂະແໝງ
 }
 
 export default function AddManageTasks() {
@@ -22,10 +23,12 @@ export default function AddManageTasks() {
     title: '',
     startDate: '',
     endDate: '',
-    category: '',
     problem: '',
     details: '',
+    employeeName: '',
+    divisionName: '',
   });
+  
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setTask({ ...task, [e.target.name]: e.target.value });
@@ -134,8 +137,12 @@ export default function AddManageTasks() {
           </div>
         </div>
 
-        {/* Footer */}
-        <footer className="bg-gray-200 p-4 text-center text-black mt-20">ກັບໄປໜ້າ admin</footer>
+       {/* Footer */}
+       <a href="/admin">
+                <footer className="bg-gray-200 p-4 text-center text-black mt-20 font-saysettha">
+                  ກັບໄປໜ້າ admin
+                </footer>
+              </a>
       </div>
     </div>
   );

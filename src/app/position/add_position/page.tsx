@@ -1,34 +1,23 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, ChangeEvent } from 'react';
 import { FaBell, FaUser, FaGavel, FaSignOutAlt, FaChartBar } from 'react-icons/fa';
-import Img from "/public/img/login.jpeg";
+import Img from '/public/img/login.jpeg';
 
-interface Task {
-  title: string;
-  startDate: string;
-  endDate: string;
-  category: string;
-  problem: string;
-  details: string;
+interface AddDivision {
+  employeeName: string;
 }
 
-export default function AddManageTasks() {
+export default function AddManageDivision() {
   const router = useRouter();
-  const [task, setTask] = useState<Task>({
-    title: '',
-    startDate: '',
-    endDate: '',
-    category: '',
-    problem: '',
-    details: '',
+  const [addDivision, setAddDivision] = useState<AddDivision>({
+    employeeName: '',
   });
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setTask({ ...task, [e.target.name]: e.target.value });
+    setAddDivision({ ...addDivision, [e.target.name]: e.target.value });
   };
 
   return (
@@ -95,22 +84,43 @@ export default function AddManageTasks() {
         </header>
 
         <div className="bg-gray-100 p-4 text-sm text-gray-600 font-saysettha">
-              ໜ້າຫຼັກ / <span className="text-gray-800 ">ຕຳແໜ່ງ / </span>
-              <span className="text-gray-800 font-semibold">ເພີ່ມຕຳແໝ່ງ</span>
-            </div>
+          ໜ້າຫຼັກ / <span className="text-gray-800 ">ຕຳແໜ່ງ / </span>
+          <span className="text-gray-800 font-semibold">ເພີ່ມຕຳແໝ່ງ</span>
+        </div>
 
         {/* Form */}
-        <div className="p-6  ">
+        <div className="p-6">
           <h2 className="text-xl font-bold text-gray-700">ເພີ່ມຕຳແໝ່ງ</h2>
-          <div className="grid mt-4" >
+          <div className="grid mt-4">
             <div className="bg-gray-300 p-20 rounded-md shadow-2xl">
-              <input type="text" name="title" value={task.title} onChange={handleChange} className="w-full p-2 border rounded-full text-black" placeholder="ຊື່ວຽກ" />
-              <div className="mt-4 flex  space-x-4">
-                <button onClick={() => alert('ບັນທຶກສຳເລັດ!')} className="bg-purple-500 text-white px-10 py-2 rounded-full">ບັນທຶກ</button>
-                <button onClick={() => router.push('/position')} className="bg-orange-500 text-white px-10 py-2 rounded-full">ຍົກເລີກ</button>
+              <input
+                type="text"
+                name="employeeName"
+                value={addDivision.employeeName}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-full text-black"
+                placeholder="ຊື່ວຽກ"
+              />
+              <div className="mt-4 flex space-x-4">
+                <button
+                  onClick={() => alert('ບັນທຶກສຳເລັດ!')}
+                  className="bg-purple-500 text-white px-10 py-2 rounded-full"
+                >
+                  ບັນທຶກ
+                </button>
+                <button
+                  onClick={() => router.push('/position')}
+                  className="bg-orange-500 text-white px-10 py-2 rounded-full"
+                >
+                  ຍົກເລີກ
+                </button>
               </div>
               {/* Footer */}
-          <a href="/admin"><footer className="bg-gray-200 p-4 text-center text-black mt-20">ກັບໄປໜ້າ admin</footer></a>
+              <a href="/admin">
+                <footer className="bg-gray-200 p-4 text-center text-black mt-20">
+                  ກັບໄປໜ້າ admin
+                </footer>
+              </a>
             </div>
           </div>
         </div>

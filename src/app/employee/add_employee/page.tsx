@@ -7,28 +7,34 @@ import { useState, ChangeEvent } from 'react';
 import { FaBell, FaUser, FaGavel, FaSignOutAlt, FaChartBar } from 'react-icons/fa';
 import Img from "/public/img/login.jpeg";
 
-interface Task {
-  title: string;
-  startDate: string;
-  endDate: string;
-  category: string;
-  problem: string;
-  details: string;
+interface AddEmployee {
+  name: string;
+  email: string;
+  phone: string;
+  division: string;
+  position: string;
+  username: string;
+  password: string;
+  role: string;
+  status: string;
 }
 
 export default function AddManageTasks() {
   const router = useRouter();
-  const [task, setTask] = useState<Task>({
-    title: '',
-    startDate: '',
-    endDate: '',
-    category: '',
-    problem: '',
-    details: '',
+  const [employee, setEmployee] = useState<AddEmployee>({
+    name: '',
+    email: '',
+    phone: '',
+    division: '',
+    position: '',
+    username: '',
+    password: '',
+    role: '',
+    status: '',
   });
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setTask({ ...task, [e.target.name]: e.target.value });
+    setEmployee({ ...employee, [e.target.name]: e.target.value });
   };
 
   return (
