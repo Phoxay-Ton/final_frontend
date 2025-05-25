@@ -3,15 +3,24 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, ChangeEvent } from 'react';
-import { FaBell, FaUser, FaGavel, FaSignOutAlt, FaChartBar } from 'react-icons/fa';
+import { FaBell, FaUserShield, FaGavel, FaSignOutAlt, FaChartBar } from 'react-icons/fa';
 import Img from '/public/img/login.jpeg';
+import Link from 'next/link';
 
 interface AddDivision {
   employeeName: string;
 }
 
 export default function AddManageDivision() {
+  {/* ອອກລະບົບ*/ }
   const router = useRouter();
+  const handleSignUp = () => {
+    const confirmed = window.confirm("ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?");
+    if (confirmed) {
+      router.push("/login");
+    }
+  };
+
   const [addDivision, setAddDivision] = useState<AddDivision>({
     employeeName: '',
   });
@@ -22,52 +31,51 @@ export default function AddManageDivision() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
       <div className="w-64 bg-blue-900 text-white p-4 flex flex-col">
-        <div className="flex items-center space-x-2">
-          <Image src={Img} alt="#" width={300} height={300} />
+        <div className="flex items-center space-x-2 ">
+          <Image src={Img} alt="#" className="w-[600px] h-auto rounded-lg" />
         </div>
-        <nav className="mt-6 space-y-4 font-saysettha">
-          <a href="/admin" className="flex items-center px-4 py-2 rounded bg-blue-800">
-            <FaBell className="mr-2" /> ໝ້າຫຼັກ
-          </a>
-          <a href="/manage_tasks" className="flex items-center px-4 py-2">
-            <FaChartBar className="mr-2" /> ການມອບວຽກ
-          </a>
-          <a href="/department" className="flex items-center px-4 py-2">
-            <FaGavel className="mr-2" /> ພະແນກ
-          </a>
-          <a href="/Division" className="flex items-center px-4 py-2">
-            <FaGavel className="mr-2" /> ຂະແໝງ
-          </a>
-          <a href="/employee" className="flex items-center px-4 py-2">
-            <FaGavel className="mr-2" /> ພະນັກງານ
-          </a>
-          <a href="/position" className="flex items-center px-4 py-2">
-            <FaGavel className="mr-2" /> ຕຳແໝ່ງ
-          </a>
+         <nav className="mt-6 space-y-4 font-saysettha">
+          <Link href="/admin" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+            ໝ້າຫຼັກ
+          </Link>
+          <Link href="/manage_tasks" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+            ການມອບວຽກ
+          </Link>
+          <Link href="/department" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+            ພະແນກ
+          </Link>
+          <Link href="/Division" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+            ຂະແໝງ
+          </Link>
+          <Link href="/employee" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+            ພະນັກງານ
+          </Link>
+          <Link href="/position" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+            ຕຳແໝ່ງ
+          </Link>
 
           <div>
-            <a href="#" className="flex items-center px-4 py-2">
-              <FaGavel className="mr-2" /> ລາພັກ
-            </a>
+            <span className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+              ລາພັກ
+            </span>
             <div className="ml-4">
-              <a href="/Leave_Type/Leave" className="flex items-center px-4 py-2">
-                <FaGavel className="mr-2" /> ຂໍລາພັກ
-              </a>
-              <a href="/Leave_Type/Approve_leave" className="flex items-center px-4 py-2">
-                <FaGavel className="mr-2" /> ອະນຸມັດລາພັກ
-              </a>
-              <a href="/Leave_Type/Follow_leave" className="flex items-center px-4 py-2">
-                <FaGavel className="mr-2" /> ຕິດຕາມລາພັກ
-              </a>
+              <Link href="/Leave_Type/Leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+                ຂໍລາພັກ
+              </Link>
+              <Link href="/Leave_Type/Approve_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+                ອະນຸມັດລາພັກ
+              </Link>
+              <Link href="/Leave_Type/Follow_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+                ຕິດຕາມລາພັກ
+              </Link>
             </div>
-            <a href="/Attendance_Type/follow_attendance" className="flex items-center px-4 py-2">
-              <FaGavel className="mr-2" /> ຕິດຕາມການເຂົ້າອອກວຽກ
-            </a>
-            <a href="/Attendance_Type/attendance" className="flex items-center px-4 py-2 bg-red-600 text-white rounded">
-              <FaSignOutAlt className="mr-2" /> ການເຂົ້າ-ອອກວຽກ
-            </a>
+            <Link href="/Attendance_Type/follow_attendance" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+              ຕິດຕາມການເຂົ້າອອກວຽກ
+            </Link>
+            <Link href="/Attendance_Type/attendance" className="flex items-center px-4 py-2 bg-red-600 text-white hover:scale-110 hover:text-white-800">
+              ການເຂົ້າ-ອອກວຽກ
+            </Link>
           </div>
         </nav>
       </div>
@@ -77,9 +85,14 @@ export default function AddManageDivision() {
         {/* Header */}
         <header className="bg-blue-800 text-white p-4 flex justify-between items-center">
           <h1 className="text-lg font-bold">ລະບົບຕິດຕາມວຽກ</h1>
-          <div className="flex items-center space-x-4">
-            <FaBell className="text-lg" />
-            <FaUser className="text-lg" />
+          <div className="flex items-center space-x-4 mr-20">
+            <a href="/admin"><div className="inline-flex items-center gap-2 ">
+              <FaUserShield className="text-lg" />
+              <span className="text-base font-medium">admin</span>
+            </div></a>
+            <button onClick={handleSignUp} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition" >
+              Sign Up
+            </button>
           </div>
         </header>
 
@@ -90,15 +103,15 @@ export default function AddManageDivision() {
 
         {/* Form */}
         <div className="p-6">
-          <h2 className="text-xl font-bold text-gray-700">ເພີ່ມຕຳແໝ່ງ</h2>
+          <h2 className="text-xl font-bold text-gray-700 font-saysettha">ເພີ່ມຕຳແໝ່ງ</h2>
           <div className="grid mt-4">
-            <div className="bg-gray-300 p-20 rounded-md shadow-2xl">
+            <div className="p-20 rounded-md shadow-2xl bg-white ">
               <input
                 type="text"
                 name="employeeName"
                 value={addDivision.employeeName}
                 onChange={handleChange}
-                className="w-full p-2 border rounded-full text-black"
+                className="w-full p-2 border rounded-full text-black border-gray-300"
                 placeholder="ຊື່ວຽກ"
               />
               <div className="mt-4 flex space-x-4">

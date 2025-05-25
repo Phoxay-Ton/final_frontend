@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { FaBell, FaUser, FaChartBar, FaGavel, FaSignOutAlt } from 'react-icons/fa';
+import { FaBell, FaUserShield, FaChartBar, FaGavel, FaSignOutAlt } from 'react-icons/fa';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Img from '/public/img/login.jpeg';
+import { useRouter } from 'next/navigation'
+import Link from 'next/link';
 
 const months = [
   { value: 1, label: 'January' },
@@ -32,6 +34,14 @@ export default function Dashboard() {
   const [selectedMonth, setSelectedMonth] = useState<number>(4);
   const [selectedYear, setSelectedYear] = useState<number>(2025);
 
+  const router = useRouter();
+  const handleSignUp = () => {
+    const confirmed = window.confirm("ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?");
+    if (confirmed) {
+      router.push("/login");
+    }
+  };
+
   const filteredData =
     taskData.find((item) => item.month === selectedMonth && item.year === selectedYear) || {
       completed: 0,
@@ -50,63 +60,71 @@ export default function Dashboard() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
       <div className="w-64 bg-blue-900 text-white p-4 flex flex-col">
-        <div className="flex items-center space-x-2">
-          <Image src={Img} alt="Admin Dashboard Logo" width={300} height={300} />
+        <div className="flex items-center space-x-2 ">
+          <Image src={Img} alt="#" className="w-[600px] h-auto rounded-lg" />
         </div>
         <nav className="mt-6 space-y-4 font-saysettha">
-          <a href="/admin" className="flex items-center px-4 py-2 rounded bg-blue-800">
-            <FaBell className="mr-2" /> ໝ້າຫຼັກ
-          </a>
-          <a href="/manage_tasks" className="flex items-center px-4 py-2">
-            <FaChartBar className="mr-2" /> ການມອບວຽກ
-          </a>
-          <a href="/department" className="flex items-center px-4 py-2">
-            <FaGavel className="mr-2" /> ພະແນກ
-          </a>
-          <a href="/Division" className="flex items-center px-4 py-2">
-            <FaGavel className="mr-2" /> ຂະແໝງ
-          </a>
-          <a href="/employee" className="flex items-center px-4 py-2">
-            <FaGavel className="mr-2" /> ພະນັກງານ
-          </a>
-          <a href="/position" className="flex items-center px-4 py-2">
-            <FaGavel className="mr-2" /> ຕຳແໝ່ງ
-          </a>
+          <Link href="/admin" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+            ໝ້າຫຼັກ
+          </Link>
+          <Link href="/manage_tasks" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+            ການມອບວຽກ
+          </Link>
+          <Link href="/department" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+            ພະແນກ
+          </Link>
+          <Link href="/Division" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+            ຂະແໝງ
+          </Link>
+          <Link href="/employee" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+            ພະນັກງານ
+          </Link>
+          <Link href="/position" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+            ຕຳແໝ່ງ
+          </Link>
+
           <div>
-            <a href="#" className="flex items-center px-4 py-2">
-              <FaGavel className="mr-2" /> ລາພັກ
-            </a>
+            <span className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+              ລາພັກ
+            </span>
             <div className="ml-4">
-              <a href="/Leave_Type/Leave" className="flex items-center px-4 py-2">
-                <FaGavel className="mr-2" /> ຂໍລາພັກ
-              </a>
-              <a href="/Leave_Type/Approve_leave" className="flex items-center px-4 py-2">
-                <FaGavel className="mr-2" /> ອະນຸມັດລາພັກ
-              </a>
-              <a href="/Leave_Type/Follow_the_leave" className="flex items-center px-4 py-2">
-                <FaGavel className="mr-2" /> ຕິດຕາມລາພັກ
-              </a>
+              <Link href="/Leave_Type/Leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+                ຂໍລາພັກ
+              </Link>
+              <Link href="/Leave_Type/Approve_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+                ອະນຸມັດລາພັກ
+              </Link>
+              <Link href="/Leave_Type/Follow_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+                ຕິດຕາມລາພັກ
+              </Link>
             </div>
-            <a href="/Attendance_Type/follow_attendance" className="flex items-center px-4 py-2">
-              <FaGavel className="mr-2" /> ຕິດຕາມການເຂົ້າອອກວຽກ
-            </a>
-            <a href="/Attendance_Type/attendance" className="flex items-center px-4 py-2 bg-red-600 text-white rounded">
-              <FaSignOutAlt className="mr-2" /> ການເຂົ້າ-ອອກວຽກ
-            </a>
+            <Link href="/Attendance_Type/follow_attendance" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
+              ຕິດຕາມການເຂົ້າອອກວຽກ
+            </Link>
+            <Link href="/Attendance_Type/attendance" className="flex items-center px-4 py-2 bg-red-600 text-white hover:scale-110 hover:text-white-800">
+              ການເຂົ້າ-ອອກວຽກ
+            </Link>
           </div>
         </nav>
+
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <header className="bg-blue-800 text-white p-4 flex justify-between items-center">
-          <h1 className="text-lg font-bold">ລະບົບຕິດຕາມວຽກ</h1>
-          <div className="flex items-center space-x-4">
-            <FaBell className="text-lg" />
-            <FaUser className="text-lg" />
+          <h1 className="text-lg font-bold font-saysettha">ລະບົບຕິດຕາມວຽກ</h1>
+          {/*icon*/}
+          <div className="flex items-center space-x-4 mr-30">
+            <a href="/admin"><div className="inline-flex items-center gap-2 ">
+              <FaUserShield className="text-lg" />
+              <span className="text-base font-medium">admin</span>
+            </div></a>
+            {/*sign up*/}
+            <button onClick={handleSignUp} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition" >
+              Sign Up
+            </button>
           </div>
         </header>
 

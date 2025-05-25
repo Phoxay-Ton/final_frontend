@@ -20,10 +20,10 @@ export default function Login() {
         
         {/* Right Side - Login Form */}
         <div className="w-80">
-          <h2 className="text-2xl text-gray-900 text-center mb-4">LOGIN</h2>
+          <h2 className="text-2xl text-gray-900 text-center mb-4 font-saysettha">LOGIN</h2>
           <form>
             <div className="mb-4">
-              <label className="block text-gray-700">ຊື່ ແລະ ນາມສະກຸນ</label>
+              <label className="block text-gray-700 font-saysettha">ອີເມວ</label>
               <input
                 type="text"
                 className="w-full px-4 py-2 border rounded-lg text-black"
@@ -31,7 +31,7 @@ export default function Login() {
               />
             </div>
             <div className="mb-4">
-              <label className="block text-gray-700">ລະຫັດຜ່ານ</label>
+              <label className="block text-gray-700 font-saysettha">ລະຫັດຜ່ານ</label>
               <input
                 type="password"
                 className="w-full px-4 py-2 border rounded-lg text-black"
@@ -40,7 +40,7 @@ export default function Login() {
             </div>
             <button
               type="submit"
-              className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-lg" >
+              className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-lg font-saysettha" >
               ເຂົ້າສູ່ລະບົບ
             </button>
           </form>
