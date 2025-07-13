@@ -1,141 +1,332 @@
+// src/app/AddManageDivision/page.tsx
 'use client';
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation'
-import { useState, ChangeEvent } from 'react';
-import { FaBell, FaUserShield, FaGavel, FaSignOutAlt, FaChartBar } from 'react-icons/fa';
-import Img from "/public/img/login.jpeg";
+import { useRouter } from 'next/navigation';
+import { useState, useCallback, useEffect } from 'react';
+// import { FaSave, FaArrowLeft } from 'react-icons/fa';
 
-interface AddDivision {
-  employeeName: string;
-  email: string;
-  phone: string;
-  division: string;
-  position: string;
-  username: string;
-  password: string;
-  role: string;
-  status: string;
-}
+// Import reusable components
+import Modal from "@/src/components/Modal";
+import NotificationModal from "@/src/components/NotificationModal";
+import Sidebar from "@/src/components/Sidebar";
+import Header from "@/src/components/Header";
+import Breadcrumb from "@/src/components/Breadcrumb";
 
-export default function AddManageDivision() {
-    {/* ອອກລະບົບ*/ }
-  const router = useRouter();
-  const handleSignUp = () => {
-    const confirmed = window.confirm("ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?");
-    if (confirmed) {
-      router.push("/login");
-    }
-  };
-  const [addDivision, setAddDivision] = useState<AddDivision>({
-    employeeName: '',
-    email: '',
-    phone: '',
-    division: '',
-    position: '',
-    username: '',
-    password: '',
-    role: '',
-    status: '',
-  });
+// Import types and services
+import { AddDivisionPayload, Department } from '@/src/types/division';
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setAddDivision({ ...addDivision, [e.target.name]: e.target.value });
-  };
-  return (
-    <div className="flex min-h-screen bg-gray-100">
-      <div className="w-64 bg-blue-900 text-white p-4 flex flex-col">
-        <div className="flex items-center space-x-2 ">
-          <Image src={Img} alt="#" className="w-[600px] h-auto rounded-lg" />
-        </div>
-         <nav className="mt-6 space-y-4 font-saysettha">
-          <Link href="/admin" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ໝ້າຫຼັກ
-          </Link>
-          <Link href="/manage_tasks" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ການມອບວຽກ
-          </Link>
-          <Link href="/department" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ພະແນກ
-          </Link>
-          <Link href="/Division" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ຂະແໝງ
-          </Link>
-          <Link href="/employee" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ພະນັກງານ
-          </Link>
-          <Link href="/position" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ຕຳແໝ່ງ
-          </Link>
+// Import fontLoader utility
+import { fontLoader } from "@/src/utils/fontLoader";
 
-          <div>
-            <span className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-              ລາພັກ
-            </span>
-            <div className="ml-4">
-              <Link href="/Leave_Type/Leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ຂໍລາພັກ
-              </Link>
-              <Link href="/Leave_Type/Approve_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ອະນຸມັດລາພັກ
-              </Link>
-              <Link href="/Leave_Type/Follow_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ຕິດຕາມລາພັກ
-              </Link>
+export default function AddManageDivisionPage() {
+    const router = useRouter();
+    const [newDivision, setNewDivision] = useState<AddDivisionPayload>({
+        Division_Name: '',
+        Phone: '',
+        Email: '',
+        Department_ID: 0,
+        Contact_Person: '',
+    });
+
+    // ✅ Fix: Ensure departments is always an array with proper initialization
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [loadingDepartments, setLoadingDepartments] = useState(true);
+    const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+    // Notification Modal state
+    const [showNotificationModal, setShowNotificationModal] = useState(false);
+    const [notificationTitle, setNotificationTitle] = useState("");
+    const [notificationMessage, setNotificationMessage] = useState("");
+    const [isSuccessNotification, setIsSuccessNotification] = useState(false);
+
+    // Load font and fetch departments on component mount
+    useEffect(() => {
+        fontLoader();
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+            router.replace("/login");
+            return;
+        }
+
+        fetchDepartments();
+    }, [router]);
+
+    const fetchDepartments = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                router.replace("/login");
+                return;
+            }
+
+            const response = await fetch('http://localhost:8080/api/v1/department', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch departments');
+            }
+
+            const data = await response.json();
+
+            // ✅ Fix: Handle different response structures
+            let departmentData;
+            if (data.data && Array.isArray(data.data)) {
+                // If response has nested data property (like in useDivision hook)
+                departmentData = data.data;
+            } else if (Array.isArray(data)) {
+                // If response is directly an array
+                departmentData = data;
+            } else {
+                // Fallback to empty array if structure is unexpected
+                console.warn('Unexpected department data structure:', data);
+                departmentData = [];
+            }
+
+            // console.log("=======Fetched departments:", departmentData);
+            setDepartments(departmentData);
+
+        } catch (error: any) {
+            console.error("Failed to fetch departments:", error);
+            // ✅ Fix: Ensure departments stays as empty array on error
+            setDepartments([]);
+            showNotification("ຜິດພາດ", "ບໍ່ສາມາດໂຫຼດລາຍຊື່ພະແນກໄດ້. ກະລຸນາລອງໃໝ່.");
+        } finally {
+            setLoadingDepartments(false);
+        }
+    };
+
+    const showNotification = useCallback((title: string, message: string, isSuccess: boolean = false) => {
+        setNotificationTitle(title);
+        setNotificationMessage(message);
+        setIsSuccessNotification(isSuccess);
+        setShowNotificationModal(true);
+    }, []);
+
+    const handleSignOut = () => {
+        setIsSignOutModalOpen(true);
+    };
+
+    const confirmSignOut = () => {
+        setIsSignOutModalOpen(false);
+        localStorage.removeItem("token");
+        router.push("/login");
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setNewDivision(prev => ({
+            ...prev,
+            [name]: name === "Department_ID" ? Number(value) : value
+        }));
+    };
+
+    const handleAddDivision = async () => {
+        // Basic validation
+        if (!newDivision.Division_Name.trim()) {
+            showNotification("ຜິດພາດ", "ກະລຸນາປ້ອນຊື່ຂະແໜງ.");
+            return;
+        }
+        if (!newDivision.Email.trim()) {
+            showNotification("ຜິດພາດ", "ກະລຸນາປ້ອນອີເມວ.");
+            return;
+        }
+        if (!newDivision.Phone.trim()) {
+            showNotification("ຜິດພາດ", "ກະລຸນາປ້ອນເບີໂທ.");
+            return;
+        }
+        if (newDivision.Department_ID === 0) {
+            showNotification("ຜິດພາດ", "ກະລຸນາເລືອກພະແນກ.");
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                showNotification("ຜິດພາດ", "ບໍ່ມີການກວດສອບສິດ. ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່.");
+                router.replace("/login");
+                return;
+            }
+
+            const response = await fetch('http://localhost:8080/api/v1/Division', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify(newDivision),
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Division created successfully:', result);
+                showNotification("ສຳເລັດ", "ເພີ່ມຂະແໜງໃໝ່ສຳເລັດ!", true);
+
+                // Clear the form fields
+                setNewDivision({
+                    Division_Name: '',
+                    Phone: '',
+                    Email: '',
+                    Department_ID: 0,
+                    Contact_Person: '',
+                });
+            } else {
+                const errorData = await response.json();
+                showNotification("ຜິດພາດ", `ບໍ່ສາມາດເພີ່ມຂະແໜງໄດ້: ${errorData.message || 'ກະລຸນາລອງໃໝ່.'}`);
+            }
+        } catch (error: any) {
+            console.error("Failed to add division:", error);
+            showNotification("ຜິດພາດ", "ບໍ່ສາມາດເຊື່ອມຕໍ່ກັບເຊີເວີໄດ້. ກະລຸນາລອງໃໝ່.");
+        }
+    };
+
+    // Function to handle closing the notification modal
+    const handleNotificationClose = () => {
+        setShowNotificationModal(false);
+        // If it was a success notification, then navigate
+        if (isSuccessNotification) {
+            router.push('/Division');
+        }
+    };
+
+    return (
+        <div className="flex h-screen overflow-hidden bg-gradient-to-br from-sky-200 via-blue-100 to-cyan-200 text-slate-800" style={{ fontFamily: 'Phetsarath OT, sans-serif' }}>
+            {/* Sign Out Modal */}
+            <Modal
+                isOpen={isSignOutModalOpen}
+                onClose={() => setIsSignOutModalOpen(false)}
+                onConfirm={confirmSignOut}
+                title="ຢືນຢັນອອກລະບົບ"
+                message="ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?"
+                confirmText="ຕົກລົງ"
+                cancelText="ຍົກເລີກ"
+            />
+
+            {/* Notification Modal */}
+            <NotificationModal
+                isOpen={showNotificationModal}
+                onClose={handleNotificationClose}
+                title={notificationTitle}
+                message={notificationMessage}
+            />
+
+            {/* Sidebar */}
+            <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
+
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Header */}
+                <Header onSignOut={handleSignOut} />
+
+                {/* Breadcrumb */}
+                <Breadcrumb paths={[{ name: "ໜ້າຫຼັກ", href: "/admin" }, { name: "ຂະແໜງ", href: "/Division" }, { name: "ເພີ່ມຂະແໜງ" }]} />
+
+                <div className="p-6 flex-1 overflow-y-auto">
+                    <div className="bg-white/90 backdrop-blur-lg rounded-xl shadow-xl border border-sky-300/60 p-6">
+                        <h2 className="text-2xl font-bold text-slate-800 font-saysettha mb-6">ເພີ່ມຂະແໜງ</h2>
+                        <div className="space-y-6">
+                            <div>
+                                <input
+                                    type="text"
+                                    id="Division_Name"
+                                    name="Division_Name"
+                                    value={newDivision.Division_Name}
+                                    onChange={handleChange}
+                                    className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                                    placeholder="ປ້ອນຊື່ຂະແໜງ"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <input
+                                    type="email"
+                                    id="Email"
+                                    name="Email"
+                                    value={newDivision.Email}
+                                    onChange={handleChange}
+                                    className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                                    placeholder="ປ້ອນອີເມວ"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <input
+                                    type="text"
+                                    id="Phone"
+                                    name="Phone"
+                                    value={newDivision.Phone}
+                                    onChange={handleChange}
+                                    className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                                    placeholder="ປ້ອນເບີໂທ"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                {loadingDepartments ? (
+                                    <div className="w-full p-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-500">
+                                        ກຳລັງໂຫຼດພະແນກ...
+                                    </div>
+                                ) : (
+                                    <select
+                                        id="Department_ID"
+                                        name="Department_ID"
+                                        value={newDivision.Department_ID}
+                                        onChange={handleChange}
+                                        className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                                        required
+                                    >
+                                        <option value={0} disabled>ເລືອກພະແນກ</option>
+                                        {/* ✅ Fix: Add safety check for departments array */}
+                                        {Array.isArray(departments) && departments.length > 0 ? (
+                                            departments.map(dep => (
+                                                <option key={dep.Department_ID} value={dep.Department_ID}>
+                                                    {dep.Department_Name}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <option value={0} disabled>ບໍ່ມີພະແນກ</option>
+                                        )}
+                                    </select>
+                                )}
+                            </div>
+
+                            {/* <div>
+                                <input
+                                    type="text"
+                                    id="Contact_Person"
+                                    name="Contact_Person"
+                                    value={newDivision.Contact_Person}
+                                    onChange={handleChange}
+                                    className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                                    placeholder="ປ້ອນຜູ້ຕິດຕໍ່"
+                                />
+                            </div> */}
+
+                            <div className="flex space-x-4 mt-6">
+                                <button
+                                    type="button"
+                                    onClick={handleAddDivision}
+                                    className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors duration-200 shadow-md font-medium text-lg"
+                                    disabled={loadingDepartments}
+                                >
+                                    ບັນທຶກ
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => router.push('/Division')}
+                                    className="flex-1 bg-gray-300 text-slate-700 px-6 py-3 rounded-xl hover:bg-gray-400 transition-colors duration-200 shadow-md font-medium text-lg"
+                                >
+                                    ຍົກເລີກ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <Link href="/Attendance_Type/follow_attendance" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-              ຕິດຕາມການເຂົ້າອອກວຽກ
-            </Link>
-            <Link href="/Attendance_Type/attendance" className="flex items-center px-4 py-2 bg-red-600 text-white hover:scale-110 hover:text-white-800">
-              ການເຂົ້າ-ອອກວຽກ
-            </Link>
-          </div>
-        </nav>
-
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col font-saysettha">
-        {/* Header */}
-        <header className="bg-blue-800 text-white p-4 flex justify-between items-center">
-          <h1 className="text-lg font-bold">ລະບົບຕິດຕາມວຽກ</h1>
-          {/*icon*/}
-          <div className="flex items-center space-x-4 mr-30">
-            <a href="/admin"><div className="inline-flex items-center gap-2 ">
-              <FaUserShield className="text-lg" />
-              <span className="text-base font-medium">admin</span>
-            </div></a>
-             <button onClick={handleSignUp} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition" >
-              Sign Up
-            </button>
-          </div>
-        </header>
-        {/* Breadcrumb */}
-        <div className="bg-gray-100 p-4 text-sm text-gray-600 font-saysettha">
-          ໜ້າຫຼັກ / <span className="text-gray-800 ">ຂະແໜງ / </span>
-          <span className="text-gray-800 font-semibold">ເພີ່ມຂະແໝງ</span>
         </div>
-
-        {/* Form */}
-        <div className="p-6 font-saysettha ">
-          <h2 className="text-xl font-bold text-gray-700">ເພີ່ມຂະແໝງ</h2>
-          <div className="grid mt-4" >
-            <div className=" p-6 rounded-md shadow-md bg-[#EFEAEA]">
-              <input type="text" name="title" className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ຊື່ຂະແໝງ" />
-              <input type="text" name="title" className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ທີ່ຢູ່" />
-              <input type="text" name="title" className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ເບີໂທ" />
-              <input type="text" name="title" className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ອີເມວ" />
-              <input type="text" name="title" className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ຊື່ຜູ້ໃຊ້" />
-              <div className="mt-4 flex  space-x-4 font-saysettha">
-                <button onClick={() => alert('ບັນທຶກສຳເລັດ!')} className="bg-purple-500 text-white px-10 py-2 rounded-full">ບັນທຶກ</button>
-                <button onClick={() => router.push('/Division')} className="bg-orange-500 text-white px-10 py-2 rounded-full">ຍົກເລີກ</button>
-              </div> {/* Footer */}
-              <a href="/admin"><footer className="bg-gray-300 p-4 text-center text-black mt-20 font-saysettha">ກັບໄປໜ້າ admin</footer></a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
 }

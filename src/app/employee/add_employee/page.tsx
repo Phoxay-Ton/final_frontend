@@ -1,183 +1,264 @@
+// src/app/employee/add_employee/page.tsx
 'use client';
 
-import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, ChangeEvent } from 'react';
-import { FaBell, FaUserShield, FaGavel, FaSignOutAlt, FaChartBar } from 'react-icons/fa';
-import Img from "/public/img/login.jpeg";
+import { useState, useCallback, useEffect } from 'react';
 
-interface AddEmployee {
-  name: string;
-  email: string;
-  phone: string;
-  division: string;
-  position: string;
-  username: string;
-  password: string;
-  role: string;
-  status: string;
-}
+// Import reusable components
+import Modal from "@/src/components/Modal";
+import NotificationModal from "@/src/components/NotificationModal";
+import Sidebar from "@/src/components/Sidebar";
+import Header from "@/src/components/Header";
+import Breadcrumb from "@/src/components/Breadcrumb";
+import AddEmployeeForm from "@/src/components/AddEmployeeForm";
 
-export default function AddManageTasks() {
-   {/* ອອກລະບົບ*/ }
+// Import types and hooks
+import { AddEmployee, AddEmployeeRequest } from "@/src/types/employee";
+import { useEmployee } from '@/src/hooks/useEmployeeData';
+import { fontLoader } from "@/src/utils/fontLoader";
+
+export default function AddEmployeePage() {
   const router = useRouter();
-  const handleSignUp = () => {
-    const confirmed = window.confirm("ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?");
-    if (confirmed) {
-      router.push("/login");
-    }
-  };
-  const [employee, setEmployee] = useState<AddEmployee>({
+  const [newEmployee, setNewEmployee] = useState<AddEmployee>({
     name: '',
     email: '',
     phone: '',
-    division: '',
-    position: '',
     username: '',
-    password: '',
     role: '',
-    status: '',
+    department_ID: '',
+    division_ID: '',
+    position_ID: '',
+    password: '',
   });
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setEmployee({ ...employee, [e.target.name]: e.target.value });
+  // Modal states
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Notification Modal state
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [isSuccessNotification, setIsSuccessNotification] = useState(false);
+
+  // Loading state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Use the custom hook for employee operations
+  const showNotification = useCallback((title: string, message: string, isSuccess: boolean = false) => {
+    setNotificationTitle(title);
+    setNotificationMessage(message);
+    setIsSuccessNotification(isSuccess);
+    setShowNotificationModal(true);
+  }, []);
+
+  const {
+    departments,
+    divisions,
+    positions,
+    loading,
+    addEmployee
+  } = useEmployee(showNotification);
+
+  // Load font on component mount
+  useEffect(() => {
+    fontLoader();
+  }, []);
+
+  const handleSignOut = () => {
+    setIsSignOutModalOpen(true);
+  };
+
+  const confirmSignOut = () => {
+    setIsSignOutModalOpen(false);
+    localStorage.removeItem("token");
+    router.push("/login");
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+
+    // Convert ID fields to numbers or empty string
+    if (name.includes('_ID')) {
+      setNewEmployee(prev => ({
+        ...prev,
+        [name]: value === '' ? '' : Number(value)
+      }));
+    } else {
+      setNewEmployee(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const validateForm = () => {
+    if (!newEmployee.name.trim()) {
+      showNotification("ຜິດພາດ", "ກະລຸນາປ້ອນຊື່ພະນັກງານ");
+      return false;
+    }
+    if (!newEmployee.email.trim()) {
+      showNotification("ຜິດພາດ", "ກະລຸນາປ້ອນອີເມວ");
+      return false;
+    }
+    if (!newEmployee.phone.trim()) {
+      showNotification("ຜິດພາດ", "ກະລຸນາປ້ອນເບີໂທ");
+      return false;
+    }
+    if (!newEmployee.username.trim()) {
+      showNotification("ຜິດພາດ", "ກະລຸນາປ້ອນຊື່ຜູ້ໃຊ້");
+      return false;
+    }
+    if (!newEmployee.password.trim()) {
+      showNotification("ຜິດພາດ", "ກະລຸນາປ້ອນລະຫັດຜ່ານ");
+      return false;
+    }
+    if (newEmployee.password.length < 6) {
+      showNotification("ຜິດພາດ", "ລະຫັດຜ່ານຕ້ອງມີຢ່າງໜ້ອຍ 6 ຕົວອັກສອນ");
+      return false;
+    }
+    if (!newEmployee.role) {
+      showNotification("ຜິດພາດ", "ກະລຸນາເລືອກສິດທິ");
+      return false;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmployee.email)) {
+      showNotification("ຜິດພາດ", "ຮູບແບບອີເມວບໍ່ຖືກຕ້ອງ");
+      return false;
+    }
+
+    // Phone validation
+    const phoneRegex = /^[0-9]{8,12}$/;
+    if (!phoneRegex.test(newEmployee.phone.replace(/\s/g, ''))) {
+      showNotification("ຜິດພາດ", "ເບີໂທຕ້ອງເປັນຕົວເລກ 8-12 ຫຼັກ");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleAddEmployee = async () => {
+    if (!validateForm() || isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // เตรียมข้อมูลให้ตรงกับโครงสร้างที่ backend ต้องการ
+      const employeeData: AddEmployeeRequest = {
+        Name: newEmployee.name.trim(),
+        Email: newEmployee.email.trim(),
+        Phone: newEmployee.phone.trim(),
+        Username: newEmployee.username.trim(),
+        Role: newEmployee.role,
+        Department_ID: newEmployee.department_ID === '' ? null : newEmployee.department_ID as number,
+        Division_ID: newEmployee.division_ID === '' ? null : newEmployee.division_ID as number,
+        Position_ID: newEmployee.position_ID === '' ? null : newEmployee.position_ID as number,
+        Password: newEmployee.password
+      };
+
+      console.log('Sending employee data:', employeeData); // Debug log
+
+      const success = await addEmployee(employeeData);
+
+      if (success) {
+        // แสดงข้อความสำเร็จ
+        showNotification("ສຳເລັດ", "ເພີ່ມພະນັກງານໃໝ່ສຳເລັດ!", true);
+
+        // Clear the form fields
+        setNewEmployee({
+          name: '',
+          email: '',
+          phone: '',
+          username: '',
+          role: '',
+          department_ID: '',
+          division_ID: '',
+          position_ID: '',
+          password: '',
+        });
+      }
+    } catch (error: any) {
+      console.error("Failed to add employee:", error);
+
+      // แสดงข้อความผิดพลาดที่ชัดเจนขึ้น
+      let errorMessage = 'ກະລຸນາລອງໃໝ່.';
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.status === 409) {
+        errorMessage = 'ຊື່ຜູ້ໃຊ້ຫຼືອີເມວນີ້ໄດ້ຖືກໃຊ້ແລ້ວ';
+      } else if (error.response?.status === 400) {
+        errorMessage = 'ຂໍ້ມູນທີ່ສົ່ງມາບໍ່ຖືກຕ້ອງ';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      showNotification("ຜິດພາດ", `ບໍ່ສາມາດເພີ່ມພະນັກງານໄດ້: ${errorMessage}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    router.push('/employee');
+  };
+
+  const handleNotificationClose = () => {
+    setShowNotificationModal(false);
+    if (isSuccessNotification) {
+      router.push('/employee');
+    }
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <div className="w-64 bg-blue-900 text-white p-4 flex flex-col">
-        <div className="flex items-center space-x-2 ">
-          <Image src={Img} alt="#" className="w-[600px] h-auto rounded-lg" />
-        </div>
-         <nav className="mt-6 space-y-4 font-saysettha">
-          <Link href="/admin" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ໝ້າຫຼັກ
-          </Link>
-          <Link href="/manage_tasks" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ການມອບວຽກ
-          </Link>
-          <Link href="/department" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ພະແນກ
-          </Link>
-          <Link href="/Division" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ຂະແໝງ
-          </Link>
-          <Link href="/employee" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ພະນັກງານ
-          </Link>
-          <Link href="/position" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ຕຳແໝ່ງ
-          </Link>
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-sky-200 via-blue-100 to-cyan-200 text-slate-800" style={{ fontFamily: 'Phetsarath OT, sans-serif' }}>
+      {/* Sign Out Modal */}
+      <Modal
+        isOpen={isSignOutModalOpen}
+        onClose={() => setIsSignOutModalOpen(false)}
+        onConfirm={confirmSignOut}
+        title="ຢືນຢັນອອກລະບົບ"
+        message="ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?"
+        confirmText="ຕົກລົງ"
+        cancelText="ຍົກເລີກ"
+      />
 
-          <div>
-            <span className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-              ລາພັກ
-            </span>
-            <div className="ml-4">
-              <Link href="/Leave_Type/Leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ຂໍລາພັກ
-              </Link>
-              <Link href="/Leave_Type/Approve_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ອະນຸມັດລາພັກ
-              </Link>
-              <Link href="/Leave_Type/Follow_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ຕິດຕາມລາພັກ
-              </Link>
-            </div>
-            <Link href="/Attendance_Type/follow_attendance" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-              ຕິດຕາມການເຂົ້າອອກວຽກ
-            </Link>
-            <Link href="/Attendance_Type/attendance" className="flex items-center px-4 py-2 bg-red-600 text-white hover:scale-110 hover:text-white-800">
-              ການເຂົ້າ-ອອກວຽກ
-            </Link>
-          </div>
-        </nav>
+      {/* Notification Modal */}
+      <NotificationModal
+        isOpen={showNotificationModal}
+        onClose={handleNotificationClose}
+        title={notificationTitle}
+        message={notificationMessage}
+      />
 
-      </div>
+      {/* Sidebar */}
+      <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col font-saysettha">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-blue-800 text-white p-4 flex justify-between items-center">
-          <h1 className="text-lg font-bold">ລະບົບຕິດຕາມວຽກ</h1>
-          {/*icon*/}
-          <div className="flex items-center space-x-4 mr-30">
-            <a href="/admin"><div className="inline-flex items-center gap-2 ">
-              <FaUserShield className="text-lg" />
-              <span className="text-base font-medium">admin</span>
-            </div></a>
-             <button onClick={handleSignUp} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition" >
-              Sign Up
-            </button>
-          </div>
-        </header>
+        <Header onSignOut={handleSignOut} />
+
         {/* Breadcrumb */}
-        <div className="bg-gray-100 p-4 text-sm text-gray-600 font-saysettha">
-          ໜ້າຫຼັກ / <span className="text-gray-800">ພະນັກງານ / </span>
-          <span className="text-gray-800 font-semibold">ເພີ່ມພະນັກງານ</span>
-        </div>
+        <Breadcrumb paths={[
+          { name: "ໜ້າຫຼັກ", href: "/admin" },
+          { name: "ພະນັກງານ", href: "/employee" },
+          { name: "ເພີ່ມພະນັກງານ" }
+        ]} />
 
-        {/* Form */}
-        <div className="p-6 font-saysettha ">
-          <h2 className="text-xl font-bold text-gray-700">ເພີ່ມພະນັກງານ</h2>
-          <div className="grid mt-4" >
-            <div className="p-6 rounded-md shadow-md bg-[#EFEAEA]">
-              <input type="text" name="title" className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ຊື່ພະນັກງານ" />
-              <input type="text" name="title" className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ອີເມວ" />
-              <input type="text" name="title" className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ເບີໂທ" />
-              <input type="text" name="title" className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ຊື່ຜູ້ໃຊ້" />
-              <input type="text" name="title" className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ຊື່ຜູ້ໃຊ້" />
-
-              <div className="flex space-x-4 p-4">
-
-                <div className="flex flex-col items-start">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder=" ຊື່ຜູ້ໃຊ້"
-                      className="border border-gray-300 rounded-full px-4 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 w-96 border-gray-300"
-                    />
-                  </div>
-                </div>
-
-
-                <div className="flex flex-col items-start">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="ລະຫັດ"
-                      className="border border-gray-300 rounded-full px-4 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 w-96 border-gray-300"
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col items-start">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="ສິດເຂົ້າໃຊ້"
-                      className="border border-gray-300 rounded-full px-4 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 w-96 border-gray-300"
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col items-start">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="ສະຖານະ"
-                      className="border border-gray-300 rounded-full px-4 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 w-96 border-gray-300"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 flex  space-x-4 font-saysettha">
-                <button onClick={() => alert('ບັນທຶກສຳເລັດ!')} className="bg-purple-500 text-white px-10 py-2 rounded-full">ບັນທຶກ</button>
-                <button onClick={() => router.push('/Division')} className="bg-orange-500 text-white px-10 py-2 rounded-full">ຍົກເລີກ</button>
-              </div> {/* Footer */}
-              <a href="/admin"><footer className="bg-gray-300 p-4 text-center text-black mt-20 font-saysettha">ກັບໄປໜ້າ admin</footer></a>
-            </div>
-          </div>
+        <div className="p-6 flex-1 overflow-y-auto">
+          <AddEmployeeForm
+            formData={newEmployee}
+            onChange={handleChange}
+            onSubmit={handleAddEmployee}
+            onCancel={handleCancel}
+            departments={departments}
+            divisions={divisions}
+            positions={positions}
+            isSubmitting={isSubmitting}
+            loading={loading}
+          />
         </div>
       </div>
     </div>

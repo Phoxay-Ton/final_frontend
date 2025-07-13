@@ -1,139 +1,233 @@
 'use client';
 
-import Image from 'next/image';
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState, ChangeEvent } from 'react';
-import { FaBell, FaUserShield, FaGavel, FaSignOutAlt, FaChartBar } from 'react-icons/fa';
-import Img from "/public/img/login.jpeg";
+import { FaArrowLeft } from "react-icons/fa";
 
-interface Task {
-  title: string;
-  startDate: string;
-  endDate: string;
-  category: string;
-  problem: string;
-  details: string;
-}
+// Import reusable components
+import Sidebar from "@/src/components/Sidebar";
+import Header from "@/src/components/Header"; // Assuming Header is in components
+import Breadcrumb from "@/src/components/Breadcrumb";
+import ApprovalForm from "@/src/components/ApprovalForm";
+import Modal from "@/src/components/Modal";
+import NotificationModal from "@/src/components/NotificationModal";
 
-export default function AddManageTasks() {
-  {/* ອອກລະບົບ*/ }
-  const router = useRouter();
-  const handleSignUp = () => {
-    const confirmed = window.confirm("ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?");
-    if (confirmed) {
-      router.push("/login");
-    }
-  };
-  const [task, setTask] = useState<Task>({
-    title: '',
-    startDate: '',
-    endDate: '',
-    category: '',
-    problem: '',
-    details: '',
-  });
+// Import Leave-specific components and types
+import { useLeaveApprovals } from "@/src/hooks/useLeaveApprovals";
+import { LeaveApproval, UpdateLeaveApprovalPayload } from "@/src/types/leave";
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setTask({ ...task, [e.target.name]: e.target.value });
-  };
+// Import fontLoader utility (assuming it's a global utility)
+import { fontLoader } from "@/src/utils/fontLoader";
 
-  return (
-    <div className="flex min-h-screen bg-gray-100">
-      <div className="w-64 bg-blue-900 text-white p-4 flex flex-col">
-        <div className="flex items-center space-x-2 ">
-          <Image src={Img} alt="#" className="w-[600px] h-auto rounded-lg" />
-        </div>
-         <nav className="mt-6 space-y-4 font-saysettha">
-          <Link href="/admin" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ໝ້າຫຼັກ
-          </Link>
-          <Link href="/manage_tasks" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ການມອບວຽກ
-          </Link>
-          <Link href="/department" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ພະແນກ
-          </Link>
-          <Link href="/Division" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ຂະແໝງ
-          </Link>
-          <Link href="/employee" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ພະນັກງານ
-          </Link>
-          <Link href="/position" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ຕຳແໝ່ງ
-          </Link>
+export default function LeaveApprovalPage() {
+    const router = useRouter();
+    const [currentEmployeeId, setCurrentEmployeeId] = useState<number | null>(null);
+    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+    const [notificationTitle, setNotificationTitle] = useState("");
+    const [notificationMessage, setNotificationMessage] = useState("");
+    const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+    const [confirmationTitle, setConfirmationTitle] = useState("");
+    const [confirmationMessage, setConfirmationMessage] = useState("");
+    const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [leaveToActOn, setLeaveToActOn] = useState<LeaveApproval | null>(null);
+    const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
 
-          <div>
-            <span className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-              ລາພັກ
-            </span>
-            <div className="ml-4">
-              <Link href="/Leave_Type/Leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ຂໍລາພັກ
-              </Link>
-              <Link href="/Leave_Type/Approve_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ອະນຸມັດລາພັກ
-              </Link>
-              <Link href="/Leave_Type/Follow_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ຕິດຕາມລາພັກ
-              </Link>
+    // Function to show notification modal, memoized with useCallback
+    const showNotification = useCallback((title: string, message: string) => {
+        setNotificationTitle(title);
+        setNotificationMessage(message);
+        setIsNotificationOpen(true);
+    }, []);
+
+    // Use the custom hook for leave approval data and operations
+    const {
+        pendingApprovals,
+        loadingApprovals,
+        errorApprovals,
+        fetchPendingApprovals,
+        handleApproveReject,
+        employees,
+        leaveTypes,
+        loadingData,
+        errorData,
+    } = useLeaveApprovals(showNotification);
+
+    // Load font and check authentication on component mount
+    useEffect(() => {
+        fontLoader();
+
+        const userString = localStorage.getItem("user");
+        if (userString) {
+            try {
+                const user = JSON.parse(userString);
+                // ✅ ตรวจสอบว่า user เป็น Admin หรือ Super_Admin
+                console.log("Current user:", user); // Debug log
+
+                // ใช้ user.id หรือ user.employee_id ตามโครงสร้างข้อมูลจริง
+                const employeeId = user.employee_id || user.id;
+                setCurrentEmployeeId(employeeId);
+
+                console.log("Employee ID set to:", employeeId); // Debug log
+            } catch (e) {
+                console.error("Failed to parse user data from localStorage:", e);
+                localStorage.removeItem("user");
+                localStorage.removeItem("token");
+                router.push("/login");
+            }
+        } else {
+            router.push("/login");
+        }
+    }, [router]);
+
+    // Fetch pending approvals when currentEmployeeId changes
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+
+        if (currentEmployeeId !== null && token) {
+            fetchPendingApprovals(currentEmployeeId);
+        } else if (!token) {
+            showNotification("ຜິດພາດ", "ບໍ່ພົບ Token ກະລຸນາເຂົ້າລະບົບໃໝ່.");
+            router.push("/login");
+        }
+    }, [currentEmployeeId, fetchPendingApprovals, router, showNotification]);
+
+
+    // Handle opening confirmation modal for approve/reject actions
+    const handleActionClick = (payload: UpdateLeaveApprovalPayload, type: "approve" | "reject") => {
+        const leave = pendingApprovals.find(app => app.Leave_ID === payload.leave_id);
+        if (leave) {
+            setLeaveToActOn(leave);
+            setActionType(type);
+            const title = type === "approve" ? "ຢືນຢັນການອະນຸມັດ" : "ຢືນຢັນການປະຕິເສດ";
+            const message = type === "approve"
+                ? `ທ່ານຕ້ອງການອະນຸມັດການລາພັກຂອງ ${leave.employee.Name} ປະເພດ ${leave.leave_type.name} ນີ້ບໍ?`
+                : `ທ່ານຕ້ອງການປະຕິເສດການລາພັກຂອງ ${leave.employee.Name} ປະເພດ ${leave.leave_type.name} ນີ້ບໍ? ການກະທຳນີ້ບໍ່ສາມາດຍົກເລີກໄດ້.`;
+
+            setConfirmationTitle(title);
+            setConfirmationMessage(message);
+            setConfirmAction(() => async () => {
+                const success = await handleApproveReject(payload);
+                if (success) {
+                    setIsConfirmationModalOpen(false);
+                    setLeaveToActOn(null);
+                    setActionType(null);
+                    // Re-fetch pending approvals after successful action
+                    fetchPendingApprovals(currentEmployeeId!);
+                }
+            });
+            setIsConfirmationModalOpen(true);
+        }
+    };
+
+    const handleApproveClick = (payload: UpdateLeaveApprovalPayload) => handleActionClick(payload, "approve");
+    const handleRejectClick = (payload: UpdateLeaveApprovalPayload) => handleActionClick(payload, "reject");
+
+    // Handle Logout
+    const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+    const handleSignOut = () => {
+        setIsSignOutModalOpen(true);
+    };
+
+    const confirmSignOut = () => {
+        setIsSignOutModalOpen(false);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        router.push("/login");
+    };
+
+    return (
+        <div className="flex min-h-screen bg-gradient-to-br from-sky-200 via-blue-100 to-cyan-200 text-slate-800" style={{ fontFamily: 'Phetsarath OT, sans-serif' }}>
+            {/* Sign Out Modal */}
+            <Modal
+                isOpen={isSignOutModalOpen}
+                onClose={() => setIsSignOutModalOpen(false)}
+                onConfirm={confirmSignOut}
+                title="ຢືນຢັນອອກລະບົບ"
+                message="ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?"
+                confirmText="ຕົກລົງ"
+                cancelText="ຍົກເລີກ"
+            />
+
+            {/* Notification Modal */}
+            <NotificationModal
+                isOpen={isNotificationOpen}
+                onClose={() => setIsNotificationOpen(false)}
+                title={notificationTitle}
+                message={notificationMessage}
+            />
+
+            {/* Confirmation Modal for Approve/Reject */}
+            <Modal
+                isOpen={isConfirmationModalOpen}
+                onClose={() => {
+                    setIsConfirmationModalOpen(false);
+                    setLeaveToActOn(null);
+                    setActionType(null);
+                }}
+                onConfirm={() => {
+                    if (confirmAction) confirmAction();
+                }}
+                title={confirmationTitle}
+                message={confirmationMessage}
+                confirmText="ຢືນຢັນ"
+                cancelText="ຍົກເລີກ"
+            />
+
+            {/* Sidebar */}
+            <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
+
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Header */}
+                <Header onSignOut={handleSignOut} />
+
+                {/* Breadcrumb */}
+                <Breadcrumb paths={[{ name: "ໜ້າຫຼັກ", href: "/admin" }, { name: "ອະນຸມັດການລາພັກ" }]} />
+
+                <div className="p-6 flex-1 overflow-y-auto">
+                    <div className="bg-white/90 backdrop-blur-lg rounded-xl shadow-xl border border-sky-300/60 p-6">
+                        <div className="flex justify-between items-center bg-sky-100/70 p-4 rounded-lg mb-6 border border-sky-200">
+                            <h3 className="text-2xl font-bold text-slate-800 font-saysettha">ລາຍການລໍຖ້າການອະນຸມັດ</h3>
+                            <Link href="/admin" className="flex items-center text-blue-600 hover:text-blue-800 transition-colors font-saysettha text-lg">
+                                <FaArrowLeft className="mr-2" /> ກັບຄືນໜ້າຫຼັກ
+                            </Link>
+                        </div>
+
+                        {loadingApprovals || loadingData ? (
+                            <div className="flex justify-center items-center h-48">
+                                <p className="text-xl text-gray-600 font-saysettha">ກຳລັງໂຫຼດຂໍ້ມູນ...</p>
+                            </div>
+                        ) : errorApprovals || errorData ? (
+                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative font-saysettha text-lg" role="alert">
+                                <strong className="font-bold">ເກີດຂໍ້ຜິດພາດ!</strong>
+                                <span className="block sm:inline ml-2">{errorApprovals || errorData}</span>
+                                <p className="mt-2 text-base">ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້. ກະລຸນາລອງໃໝ່.</p>
+                            </div>
+                        ) : pendingApprovals.length === 0 ? (
+                            <div className="bg-sky-50 p-6 rounded-lg shadow-md text-center text-gray-600 font-saysettha border border-sky-200 text-xl">
+                                <p>ບໍ່ມີລາຍການລາພັກທີ່ລໍຖ້າການອະນຸມັດ.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                                {pendingApprovals.map((approval) => (
+
+                                    <ApprovalForm
+                                        key={approval.Leave_ID}
+                                        approval={approval}
+                                        onApprove={handleApproveClick}
+                                        onReject={handleRejectClick}
+                                        employees={employees}
+                                        leaveTypes={leaveTypes}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
-            <Link href="/Attendance_Type/follow_attendance" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-              ຕິດຕາມການເຂົ້າອອກວຽກ
-            </Link>
-            <Link href="/Attendance_Type/attendance" className="flex items-center px-4 py-2 bg-red-600 text-white hover:scale-110 hover:text-white-800">
-              ການເຂົ້າ-ອອກວຽກ
-            </Link>
-          </div>
-        </nav>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="bg-blue-800 text-white p-4 flex justify-between items-center">
-          <h1 className="text-lg font-bold font-saysettha">ລະບົບຕິດຕາມວຽກ</h1>
-          {/*icon*/}
-          <div className="flex items-center space-x-4 mr-30">
-            <a href="/admin"><div className="inline-flex items-center gap-2 ">
-              <FaUserShield className="text-lg" />
-              <span className="text-base font-medium">admin</span>
-            </div></a>
-            {/*sign up*/}
-            <button onClick={handleSignUp} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition" >
-              Sign Up
-            </button>
-          </div>
-        </header>
-        {/* Breadcrumb */}
-        <div className="bg-gray-100 p-4 text-sm text-gray-600 font-saysettha">
-          ໜ້າຫຼັກ / <span className="text-gray-800 font-semibold">ອະນຸມັດລາພັກ</span>
         </div>
-
-        {/* Form */}
-        <div className="p-6  ">
-          <h2 className="text-xl font-bold text-gray-700 font-saysettha">ອະນຸມັດລາພັກ</h2>
-          <div className="grid mt-4" >
-            <div className="bg-gray-200 p-20 rounded-md shadow-md ">
-              <input type="text" name="title" value={task.title} onChange={handleChange} className="w-full p-2 border rounded-md text-black bg-opacity-50" placeholder="ຊື່ວຽກ" />
-              <div className="mt-4 flex  space-x-4">
-                <button onClick={() => alert('ບັນທຶກສຳເລັດ!')} className="bg-purple-500 text-white px-6 py-2 rounded-md">ອະນຸມັດລາພັກ</button>
-                <button onClick={() => router.push('/department')} className="bg-orange-500 text-white px-6 py-2 rounded-md">ປະຕະເສດ</button>
-              </div>
-            </div>
-            <a href="/admin">
-              <footer className="bg-gray-200 p-4 text-center text-black mt-20 font-saysettha">
-                ກັບໄປໜ້າ admin
-              </footer>
-            </a>
-          </div> {/* Footer */}
-
-        </div>
-
-
-
-      </div>
-    </div>
-  );
+    );
 }

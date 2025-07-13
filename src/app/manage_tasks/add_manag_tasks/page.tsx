@@ -1,199 +1,186 @@
 'use client';
 
-import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, ChangeEvent } from 'react';
-import { FaBell, FaUserShield, FaGavel, FaSignOutAlt, FaChartBar } from 'react-icons/fa';
-import Img from "/public/img/login.jpeg";
-import { useRef } from 'react';
-import { FaRegFileAlt } from 'react-icons/fa';
+import { useState, useCallback, useEffect } from "react";
+import Link from 'next/link';
+import { FaArrowLeft } from "react-icons/fa";
 
-interface Task {
-  title: string;          // ຊື່ວຽກ
-  startDate: string;      // ເລີ່ມວັນທີ່
-  endDate: string;        // ກຳນົດສົ່ງ
-  problem: string;        // ວຽກທີ່ມອບໃຫ້
-  details: string;        // ລາຍລະອຽດ
-  employeeName: string;   // ຊື່ພະນັກງານ
-  divisionName: string;   // ຊື່ຂະແໝງ
-}
+// Import reusable components
+import Modal from "@/src/components/Modal";
+import NotificationModal from "@/src/components/NotificationModal";
+import Header from "@/src/components/Header";
+import Sidebar from "@/src/components/Sidebar";
+import Breadcrumb from "@/src/components/Breadcrumb";
+import AddManageTaskForm from "@/src/components/AddManageTaskForm";
 
-export default function AddManageTasks() {
-  //ສົ່ງເອກະສານ
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+// Import types and hook
+import { useManageTask } from "@/src/hooks/useManageTask";
+import { AddManageTaskPayload } from "@/src/types/manageTask";
 
-  {/* ອອກລະບົບ*/ }
-  
-  const handleSignUp = () => {
-    const confirmed = window.confirm("ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?");
-    if (confirmed) {
-      router.push("/login");
-    }
-  };
+// Import fontLoader utility
+import { fontLoader } from "@/src/utils/fontLoader";
 
-  const handleClick = () => {
-    fileInputRef.current?.click();
-  };
-
+export default function AddManageTasksPage() {
   const router = useRouter();
-  const [task, setTask] = useState<Task>({
-    title: '',
-    startDate: '',
-    endDate: '',
-    problem: '',
-    details: '',
-    employeeName: '',
-    divisionName: '',
-  });
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setTask({ ...task, [e.target.name]: e.target.value });
+  // Notification Modal States
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+
+  const showNotification = useCallback((title: string, message: string) => {
+    setNotificationTitle(title);
+    setNotificationMessage(message);
+    setShowNotificationModal(true);
+  }, []);
+
+  const {
+    addManageTask,
+    employees,
+    divisions,
+    loading: loadingHook,
+    error: errorHook,
+    fetchEmployeesByDivision,
+    fetchDivisions, // ✅ ถูกต้อง: ดึง fetchDivisions จาก useManageTask
+  } = useManageTask(showNotification);
+
+  // Handle Logout
+  const handleSignOut = () => {
+    setIsSignOutModalOpen(true);
   };
+
+  const confirmSignOut = () => {
+    setIsSignOutModalOpen(false);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    router.push("/login");
+  };
+
+  const handleSaveTask = async (taskPayload: AddManageTaskPayload, file: File | null) => {
+    const success = await addManageTask(taskPayload, file);
+    if (success) {
+      router.push("/manage_tasks");
+    }
+    return success;
+  };
+
+  const handleCancel = () => {
+    router.push("/manage_tasks");
+  };
+
+  useEffect(() => {
+    fontLoader();
+
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+
+    if (!token || !user) {
+      console.warn("Authentication failed: No token or user data found. Redirecting to login.");
+      router.replace("/login");
+      return;
+    }
+
+    // try {
+    //   const userData = JSON.parse(user);
+    //   if (userData.role !== "Admin") {
+    //     showNotification("ບໍ່ມີສິດ", "ທ່ານບໍ່ມີສິດເຂົ້າເຖິງໜ້ານີ້.");
+    //     router.replace("/unauthorized");
+    //   }
+    // } catch (e) {
+    //   console.error("Failed to parse user data from localStorage", e);
+    //   showNotification("ຂໍ້ມູນຜູ້ໃຊ້ບໍ່ຖືກຕ້ອງ", "ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່.");
+    //   router.replace("/login");
+    // }
+    // ✅ ถูกต้อง: เพิ่ม fetchDivisions ใน Dependency array เพื่อให้มั่นใจว่าฟังก์ชันนี้ถูกรวมในการพิจารณาของ useEffect
+  },
+    [router, showNotification, fetchDivisions]);
+
+  // ✅ ถูกต้อง: เพิ่ม useEffect เพื่อโหลด divisions เมื่อ component mount (ถ้ายังไม่ได้โหลด)
+  useEffect(() => {
+    // เงื่อนไขนี้จะทำงานเมื่อ divisions ยังว่างอยู่ และไม่ได้อยู่ในสถานะ loading หรือ error
+    if (!divisions.length && !loadingHook && !errorHook) {
+      fetchDivisions();
+    }
+    // ไม่ต้อง fetchEmployeesByDivision ตรงนี้ เพราะจะถูกเรียกเมื่อ division ถูกเลือกใน AddManageTaskForm
+  }, [divisions.length, loadingHook, errorHook, fetchDivisions]); // Dependency array ถูกต้อง
+
+  if (loadingHook) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-200 via-blue-100 to-cyan-200">
+        <p className="text-xl text-gray-600 font-saysettha">ກຳລັງໂຫຼດຂໍ້ມູນພະນັກງານ ແລະ ຂະແໜງ...</p>
+      </div>
+    );
+  }
+
+  if (errorHook) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-200 via-blue-100 to-cyan-200">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative font-saysettha text-lg" role="alert">
+          <strong className="font-bold">ເກີດຂໍ້ຜິດພາດ!</strong>
+          <span className="block sm:inline ml-2">{errorHook}</span>
+          <p className="mt-2 text-base">ບໍ່ສາມາດໂຫຼດຂໍ້ມູນທີ່ຈຳເປັນໄດ້. ກະລຸນາລອງໃໝ່.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <div className="w-64 bg-blue-900 text-white p-4 flex flex-col">
-        <div className="flex items-center space-x-2 ">
-          <Image src={Img} alt="#" className="w-[600px] h-auto rounded-lg" />
-        </div>
-           <nav className="mt-6 space-y-4 font-saysettha">
-          <Link href="/admin" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ໝ້າຫຼັກ
-          </Link>
-          <Link href="/manage_tasks" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ການມອບວຽກ
-          </Link>
-          <Link href="/department" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ພະແນກ
-          </Link>
-          <Link href="/Division" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ຂະແໝງ
-          </Link>
-          <Link href="/employee" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ພະນັກງານ
-          </Link>
-          <Link href="/position" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ຕຳແໝ່ງ
-          </Link>
+    <div className="flex min-h-screen bg-gradient-to-br from-sky-200 via-blue-100 to-cyan-200 text-slate-800" style={{ fontFamily: 'Phetsarath OT, sans-serif' }}>
+      <Modal
+        isOpen={isSignOutModalOpen}
+        onClose={() => setIsSignOutModalOpen(false)}
+        onConfirm={confirmSignOut}
+        title="ຢືນຢັນອອກລະບົບ"
+        message="ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?"
+        confirmText="ຕົກລົງ"
+        cancelText="ຍົກເລີກ"
+      />
 
-          <div>
-            <span className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-              ລາພັກ
-            </span>
-            <div className="ml-4">
-              <Link href="/Leave_Type/Leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ຂໍລາພັກ
-              </Link>
-              <Link href="/Leave_Type/Approve_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ອະນຸມັດລາພັກ
-              </Link>
-              <Link href="/Leave_Type/Follow_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ຕິດຕາມລາພັກ
+      <NotificationModal
+        isOpen={showNotificationModal}
+        onClose={() => setShowNotificationModal(false)}
+        title={notificationTitle}
+        message={notificationMessage}
+      />
+
+      <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
+
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header onSignOut={handleSignOut} />
+
+        <Breadcrumb paths={[{ name: "ໜ້າຫຼັກ", href: "/admin" }, { name: "ມອບວຽກ", href: "/manage_tasks" }, { name: "ເພີ່ມວຽກໃຫ້ພະນັກງານ" }]} />
+
+        <div className="p-6 flex-1 overflow-y-auto">
+          <div className="bg-white/90 backdrop-blur-lg rounded-xl shadow-xl border border-sky-300/60 p-6">
+            <div className="flex justify-between items-center bg-sky-100/70 p-4 rounded-lg mb-6 border border-sky-200">
+              <h3 className="text-2xl font-bold text-slate-800 font-saysettha">ເພີ່ມວຽກໃຫ້ພະນັກງານ</h3>
+              <Link href="/manage_tasks" className="flex items-center text-blue-600 hover:text-blue-800 transition-colors font-saysettha text-lg">
+                <FaArrowLeft className="mr-2" /> ກັບຄືນ
               </Link>
             </div>
-            <Link href="/Attendance_Type/follow_attendance" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-              ຕິດຕາມການເຂົ້າອອກວຽກ
-            </Link>
-            <Link href="/Attendance_Type/attendance" className="flex items-center px-4 py-2 bg-red-600 text-white hover:scale-110 hover:text-white-800">
-              ການເຂົ້າ-ອອກວຽກ
-            </Link>
-          </div>
-        </nav>
-      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="bg-blue-800 text-white p-4 flex justify-between items-center">
-          <h1 className="text-lg font-bold">ລະບົບຕິດຕາມວຽກ</h1>
-          <div className="flex items-center space-x-4 mr-30">
-            <a href="/admin"><div className="inline-flex items-center gap-2 ">
-              <FaUserShield className="text-lg" />
-              <span className="text-base font-medium">admin</span>
-            </div></a>
-            <button onClick={handleSignUp} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition" >
-              Sign Up
-            </button>
-          </div>
-        </header>
-        {/* Breadcrumb */}
-        <div className="bg-gray-100 p-4 text-sm text-gray-600 font-saysettha">
-          ໜ້າຫຼັກ / <span className="text-gray-800 font-semibold">ມອບວຽກ / </span>
-          <span className="text-gray-800 font-semibold">ເພີ່ມວຽກໃຫ້ພະນັກງານ</span>
-        </div>
-
-        {/* Form */}
-        <div className="p-6 font-saysettha">
-          <h2 className="text-xl font-bold text-gray-700 text-black bg-yellow-100 p-4">ເພີ່ມວຽກ</h2>
-          <div className="grid grid-cols-2 gap-6 mt-4">
-            <div className="bg-gray-200 p-6 rounded-md shadow-md text-black ">
-              <label className="text-sm text-gray-700">ຊື່ວຽກ</label>
-              <input type="text" name="title" className="w-full mb-3 p-2 border rounded-full border-gray-300 " placeholder="ຊື່ວຽກທີ່ຖືກມອບ"/>
-              <div>
-                <label className="text-sm text-gray-700">ເລີ່ມວັນທີ່</label>
-                <input type="date" className="w-full mb-3 p-2 border rounded-full border-gray-300" />
+            {/* ✅ สำคัญ: เพิ่ม Key prop เพื่อช่วย React ในการรักษา State ของ AddManageTaskForm */}
+            {/* ✅ ตรวจสอบว่า divisions มีข้อมูล (length > 0) ก่อน Render form */}
+            {divisions.length > 0 ? ( // ใช้ divisions.length > 0 เพื่อยืนยันว่ามีข้อมูล
+              <AddManageTaskForm
+                key="add-manage-task-form" // ✅ Key ที่ไม่เปลี่ยน จะช่วยรักษา State ภายในของ AddManageTaskForm
+                onSave={handleSaveTask}
+                onCancel={handleCancel}
+                showNotification={showNotification}
+                employees={employees}
+                divisions={divisions}
+                fetchEmployeesByDivision={fetchEmployeesByDivision}
+              />
+            ) : (
+              <div className="text-center text-gray-500 font-saysettha">
+                ກຳລັງໂຫຼດຂໍ້ມູນທີ່ຈຳເປັນ...
+                {/* อาจจะแสดงข้อความว่า "ไม่สามารถโหลดข้อมูลพนักงาน หรือ แผนกได้." ถ้า errorHook ไม่เป็น null */}
               </div>
-              <div>
-                <label className="text-sm text-gray-700">ກຳນົດສົ່ງ</label>
-                <input type="date" className="w-full mb-3 p-2 border rounded-full border-gray-300" />
-              </div>
-
-              <label className="text-sm text-gray-700">ສົ່ງເອກະສານ</label>
-              <div className="w-full mb-3 p-2 border rounded-full border-gray-300  bg-white ">
-                <button
-                  type="button"
-                  onClick={handleClick}
-                  className="flex items-center gap-2 px-4 py-3 w-full text-left rounded-full bg-[#f5f5f5]  cursor-pointer  bg-white "
-                >
-                  <FaRegFileAlt className="text-xl" />
-                  <span className="text-base">ວາລະຖຶນມອບໃຫ້</span>
-                </button>
-
-                {/* Hidden file input (only allow document files) */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.doc,.docx,.txt"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      console.log('Selected file:', file.name);
-                      // ຈັດການອັບໂຫຼດ file ທີ່ນີ້
-                    }
-                  }}
-                />
-              </div>
-
-              <div className="w-full mb-3 p-2  border-gray-300">
-                <label className="text-sm text-gray-700">ລາຍລະອຽດ</label>
-                <textarea
-                  placeholder="ກະລຸນາປ້ອນລາຍລະອຽດ..."
-                  className="w-full px-4 py-3 rounded-xl border border-[#cbbec2] bg-white text-[#333] placeholder-[#b49ca4] focus:outline-none focus:ring-2 focus:ring-[#cbbec2] resize-none"
-                  rows={4}
-                />
-              </div>
-
-            </div>
-            <div className="bg-gray-200 p-6 rounded-md shadow-md text-black">
-              {/* <label className="block text-gray-700">ຊື່ປະເພດ</label> */}
-              <input type="text" name="category" className="w-full mb-10 p-2 border rounded-full border-gray-300" placeholder="ຊື່ພະນັກງານ" />
-              <input type="text" name="category" className="w-full p-2 border rounded-full border-gray-300" placeholder="ຊື່ຂະແໜງ" />
-            </div>
-          </div>
-          <div className="mt-4 flex  space-x-4">
-            <button onClick={() => alert('ບັນທຶກສຳເລັດ!')} className="bg-purple-500 text-white px-10 py-2 rounded-full">ບັນທຶກ</button>
-            <button onClick={() => router.push('/manage_tasks')} className="bg-orange-500 text-white px-10 py-2 rounded-full">ຍົກເລີກ</button>
+            )}
           </div>
         </div>
-
-        {/* Footer */}
-        <a href="/admin">
-          <footer className="bg-gray-200 p-4 text-center text-black mt-20 font-saysettha">
-            ກັບໄປໜ້າ admin
-          </footer>
-        </a>
       </div>
     </div>
   );

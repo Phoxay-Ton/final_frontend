@@ -1,169 +1,204 @@
+// src/app/position/page.tsx
 'use client';
 
-import Image from "next/image";
-import {
-  FaBell,
-  FaUserShield,
-  FaEdit,
-  FaTrash,
-  FaPlus,
-  FaSignOutAlt,
-  FaChartBar,
-  FaGavel,
-} from "react-icons/fa";
-import Img from "/public/img/login.jpeg";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from "react";
 import Link from 'next/link';
+import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 
-export default function Dashboard() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+// Import components
+import Modal from "@/src/components/Modal";
+import NotificationModal from "@/src/components/NotificationModal";
+import PositionEditModal from "@/src/components/PositionEditModal";
+import Sidebar from "@/src/components/Sidebar";
+import Header from "@/src/components/Header";
+import Breadcrumb from "@/src/components/Breadcrumb";
+import { fontLoader } from "@/src/utils/fontLoader";
 
-   {/* ອອກລະບົບ*/ }
+// Import types and hooks
+import { Position } from "@/src/types/position";
+import { usePosition } from "@/src/hooks/usePosition";
+
+export default function PositionPage() {
   const router = useRouter();
-  const handleSignUp = () => {
-    const confirmed = window.confirm("ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?");
-    if (confirmed) {
-      router.push("/login");
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentPosition, setCurrentPosition] = useState<Position | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // State for Notification Modal
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+
+  // State for Delete Confirmation Modal
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [positionToDeleteId, setPositionToDeleteId] = useState<number | null>(null);
+
+  // Load font on component mount
+  useEffect(() => {
+    fontLoader();
+  }, []);
+
+  // Function to show notification modal
+  const showNotification = (title: string, message: string) => {
+    setNotificationTitle(title);
+    setNotificationMessage(message);
+    setShowNotificationModal(true);
+  };
+
+  // Use the custom hook for position data and operations
+  const { positions, loading, error, fetchPositions, updatePosition, deletePosition } = usePosition(showNotification);
+
+  // Handle Logout
+  const handleSignOut = () => {
+    setIsSignOutModalOpen(true);
+  };
+
+  const confirmSignOut = () => {
+    setIsSignOutModalOpen(false);
+    localStorage.removeItem("token");
+    router.push("/login");
+  };
+
+  // Open Edit Modal with position data
+  const openEditModal = (position: Position) => {
+    setCurrentPosition(position);
+    setIsEditModalOpen(true);
+  };
+
+  // Handle updating position data
+  const handleUpdatePosition = async (updatedPosition: Position) => {
+    const success = await updatePosition(updatedPosition);
+    if (success) {
+      setIsEditModalOpen(false);
     }
   };
 
-  return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="w-64 bg-blue-900 text-white p-4 flex flex-col">
-        <div className="flex items-center space-x-2">
-          <Image src={Img} alt="Logo" className="w-[600px] h-auto rounded-lg" />
-        </div>
-          <nav className="mt-6 space-y-4 font-saysettha">
-          <Link href="/admin" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ໝ້າຫຼັກ
-          </Link>
-          <Link href="/manage_tasks" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ການມອບວຽກ
-          </Link>
-          <Link href="/department" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ພະແນກ
-          </Link>
-          <Link href="/Division" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ຂະແໝງ
-          </Link>
-          <Link href="/employee" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ພະນັກງານ
-          </Link>
-          <Link href="/position" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ຕຳແໝ່ງ
-          </Link>
+  // Handle opening delete confirmation modal
+  const handleDeleteClick = (positionId: number) => {
+    setPositionToDeleteId(positionId);
+    setShowDeleteConfirmModal(true);
+  };
 
-          <div>
-            <span className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-              ລາພັກ
-            </span>
-            <div className="ml-4">
-              <Link href="/Leave_Type/Leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ຂໍລາພັກ
-              </Link>
-              <Link href="/Leave_Type/Approve_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ອະນຸມັດລາພັກ
-              </Link>
-              <Link href="/Leave_Type/Follow_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ຕິດຕາມລາພັກ
-              </Link>
-            </div>
-            <Link href="/Attendance_Type/follow_attendance" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-              ຕິດຕາມການເຂົ້າອອກວຽກ
-            </Link>
-            <Link href="/Attendance_Type/attendance" className="flex items-center px-4 py-2 bg-red-600 text-white hover:scale-110 hover:text-white-800">
-              ການເຂົ້າ-ອອກວຽກ
-            </Link>
-          </div>
-        </nav>
-      </div>
+  // Handle deleting position data after confirmation
+  const confirmDeletePosition = async () => {
+    if (positionToDeleteId === null) return;
+
+    const success = await deletePosition(positionToDeleteId);
+    if (success) {
+      setShowDeleteConfirmModal(false);
+    }
+    setPositionToDeleteId(null); // Clear the ID after operation
+  };
+
+  return (
+    <div className="flex min-h-screen bg-gradient-to-br from-sky-200 via-blue-100 to-cyan-200 text-slate-800" style={{ fontFamily: 'Phetsarath OT, sans-serif' }}>
+      {/* Sign Out Modal */}
+      <Modal
+        isOpen={isSignOutModalOpen}
+        onClose={() => setIsSignOutModalOpen(false)}
+        onConfirm={confirmSignOut}
+        title="ຢືນຢັນອອກລະບົບ"
+        message="ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?"
+        confirmText="ຕົກລົງ"
+        cancelText="ຍົກເລີກ"
+      />
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteConfirmModal}
+        onClose={() => setShowDeleteConfirmModal(false)}
+        onConfirm={confirmDeletePosition}
+        title="ຢືນຢັນການລຶບ"
+        message="ທ່ານແນ່ໃຈບໍວ່າຕ້ອງການລຶບຕຳແໜ່ງນີ້? ການກະທຳນີ້ບໍ່ສາມາດຍົກເລີກໄດ້."
+        confirmText="ລຶບ"
+        cancelText="ຍົກເລີກ"
+      />
+
+      {/* Edit Position Modal */}
+      {isEditModalOpen && currentPosition && (
+        <PositionEditModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          initialData={currentPosition}
+          onSave={handleUpdatePosition}
+        />
+      )}
+
+      {/* Notification Modal */}
+      <NotificationModal
+        isOpen={showNotificationModal}
+        onClose={() => setShowNotificationModal(false)}
+        title={notificationTitle}
+        message={notificationMessage}
+      />
+
+      {/* Sidebar */}
+      <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-blue-800 text-white p-4 flex justify-between items-center">
-          <h1 className="text-lg font-bold font-saysettha">ລະບົບຕິດຕາມວຽກ</h1>
-          <div className="flex items-center space-x-4 mr-30">
-            <a href="/admin">
-              <div className="inline-flex items-center gap-2">
-                <FaUserShield className="text-lg" />
-                <span className="text-base font-medium">admin</span>
-              </div>
-            </a>
-            <button onClick={handleSignUp} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition" >
-              Sign Up
-            </button>
-          </div>
-        </header>
+        <Header onSignOut={handleSignOut} />
 
-        <div className="bg-gray-100 p-4 text-sm text-gray-600 font-saysettha">
-          ໜ້າຫຼັກ / <span className="text-gray-800 font-semibold">ຕຳແໜ່ງ</span>
-        </div>
+        {/* Breadcrumb */}
+        <Breadcrumb paths={[{ name: "ໜ້າຫຼັກ", href: "/admin" }, { name: "ຕຳແໜ່ງ" }]} />
 
-       <div className="mt-6 bg-white p-6 rounded-lg shadow-lg ">
-          <div className="flex justify-between items-center bg-yellow-100 p-6">
-            <h3 className="text-xl font-bold text-black  font-saysettha">ຕຳແໝ່ງ</h3>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 font-saysettha">
-              <a href="/position/add_position">  <FaPlus /> <span>ເພີ່ມຕຳແໝ່ງ</span></a>
-            </button>
-          </div>
-
-
-          <div className="mt-6 overflow-x-auto">
-            <table className="w-full border-collapse border rounded-lg shadow-md">
-              <thead className="bg-gray-200 text-black font-saysettha">
-                <tr>
-                  <th className="p-3 text-left">ຊື່ພະນັກງານ</th>                
-                  <th className="p-3 text-left">ຊື່ຜູ້ໃຊ້</th>                
-                  <th className="p-3 text-left">ແກ້ໄຂ</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-t text-black">
-                  <td className="p-3">ໂພນໄຊ .......... ......  ເສີບ</td>               
-                  <td className="p-3 text-blue-600">To-Do</td>
-                  <td className="p-3 flex space-x-2">
-                    <FaEdit className="text-yellow-500 cursor-pointer" onClick={() => setIsModalOpen(true)} />
-                    <FaTrash className="text-red-500 cursor-pointer" />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Modal */}
-          {isModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md font-saysettha">
-                <h2 className="text-xl font-bold mb-4 text-black">ແກ້ໄຂຂໍ້ມູນຕຳແໝ່ງ</h2>
-                <form className="space-y-4">
-                  {['ຊື່ຕຳແໝ່ງ','ອີເມວ','ເບີໂທ','ຂະແໜງ','ຕຳແໝ່ງ','ຊື່ຜູ້ໃຊ້'].map(label => (
-                    <div key={label}>
-                      <label className="block text-black font-medium">{label}</label>
-                      <input type="text" className="w-full mt-1 p-2 border border-gray-300 rounded-lg text-black" placeholder={label} />
-                    </div>
-                  ))}
-                  <div className="flex justify-end space-x-2">
-                    <button type="button" className="px-4 py-2 bg-gray-400 text-white rounded-lg" onClick={() => setIsModalOpen(false)}>
-                      ຍົກເລີກ
-                    </button>
-                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg">
-                      ບັນທຶກ
-                    </button>
-                  </div>
-                </form>
-              </div>
+        <div className="p-6 flex-1 overflow-y-auto">
+          <div className="bg-white/90 backdrop-blur-lg rounded-xl shadow-xl border border-sky-300/60 p-6">
+            <div className="flex justify-between items-center bg-sky-100/70 p-4 rounded-lg mb-6 border border-sky-200">
+              <h3 className="text-2xl font-bold text-slate-800 font-saysettha">ຕຳແໜ່ງ</h3>
+              <Link href="/position/add_position" className="bg-blue-600 text-white px-5 py-2 rounded-lg flex items-center space-x-2 font-saysettha hover:bg-blue-700 transition-all duration-200 shadow-md">
+                <FaPlus className="text-lg" /> <span>ເພີ່ມຕຳແໜ່ງ</span>
+              </Link>
             </div>
-          )}
 
-          {/* Footer */}
-          <a href="/admin">
-            <footer className="bg-gray-200 p-4 text-center text-black mt-20 font-saysettha">
-              ກັບໄປໜ້າ admin
-            </footer>
-          </a>
+            {/* Position Table */}
+            <div className="mt-6 max-h-[400px] overflow-y-auto overflow-x-auto rounded-lg shadow-md border border-sky-200 relative">
+              <table className="w-full border-collapse">
+                <thead className="bg-sky-200 text-slate-800 font-saysettha text-lg">
+                  <tr>
+                    <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ລຳດັບ</th>
+                    <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ຊື່ຕຳແໜ່ງ</th>
+                    <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ລຶບຕຳແໜ່ງ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={2} className="text-center p-4 text-gray-500 font-saysettha text-md">
+                        ກຳລັງໂຫຼດຂໍ້ມູນ...
+                      </td>
+                    </tr>
+                  ) : error ? (
+                    <tr>
+                      <td colSpan={2} className="text-center p-4 text-red-500 font-saysettha text-md">
+                        Error: {error}
+                      </td>
+                    </tr>
+                  ) : positions.length > 0 ? (
+                    positions.map((position, index) => (
+                      <tr key={position.Position_ID} className="border-t border-sky-200 text-slate-700 hover:bg-sky-50/50 transition-colors">
+                        <td className="p-4">{index + 1}</td>
+                        <td className="p-4">{position.Position_Name}</td>
+                        <td className="p-4 flex space-x-3 items-center">
+                          {/* <FaEdit className="text-yellow-500 text-xl cursor-pointer hover:text-yellow-600 transition-colors" onClick={() => openEditModal(position)} /> */}
+                          <FaTrash className="text-red-500 text-xl cursor-pointer hover:text-red-600 transition-colors" onClick={() => handleDeleteClick(position.Position_ID)} />
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={2} className="text-center p-4 text-gray-500 font-saysettha text-md">
+                        ບໍ່ພົບຂໍ້ມູນຕຳແໜ່ງ
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>

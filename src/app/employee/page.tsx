@@ -1,178 +1,265 @@
+// src/app/employee/page.tsx
 'use client';
 
-import Image from "next/image";
-import {
-  FaBell,
-  FaUserShield,
-  FaEdit,
-  FaTrash,
-  FaPlus,
-  FaSignOutAlt,
-  FaChartBar,
-  FaGavel,
-} from "react-icons/fa";
-import Img from "/public/img/login.jpeg";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from "react";
 import Link from 'next/link';
+import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 
-export default function Dashboard() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+// Import reusable components
+import Modal from "@/src/components/Modal";
+import NotificationModal from "@/src/components/NotificationModal";
+import EmployeeEditModal from "@/src/components/EmployeeEditModal";
+import Sidebar from "@/src/components/Sidebar";
+import Header from "@/src/components/Header";
+import Breadcrumb from "@/src/components/Breadcrumb";
 
-    {/* ອອກລະບົບ*/ }
+// Import fontLoader utility
+import { fontLoader } from "@/src/utils/fontLoader";
+
+// Import Employee-specific types and hook
+import { Employee } from "@/src/types/employee";
+import { useEmployee } from "@/src/hooks/useEmployeeData";
+
+export default function EmployeePage() {
   const router = useRouter();
-  const handleSignUp = () => {
-    const confirmed = window.confirm("ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?");
-    if (confirmed) {
-      router.push("/login");
+
+  // Consolidated Notification state: use a single object for title and message
+  const [notification, setNotification] = useState<{ title: string; message: string } | null>(null);
+
+  // Memoize showNotification to prevent it from changing on every render.
+  // This is crucial for the `useEmployee` hook's dependency array.
+  const showNotification = useCallback((title: string, message: string) => {
+    setNotification({ title, message });
+    // Automatically hide the notification after 3 seconds
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+  }, []); // Empty dependency array ensures this function reference is stable
+
+  // Function to clear notification immediately (e.g., when clicking "X" on modal)
+  const clearNotification = () => {
+    setNotification(null);
+  };
+
+  // Use the custom hook for employee data and operations, passing the stable showNotification
+  const {
+    employees,
+    departments,
+    divisions,
+    positions,
+    loading,
+    error,
+    updateEmployee,
+    deleteEmployee,
+  } = useEmployee(showNotification); // `showNotification` is now stable
+
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [employeeToDeleteId, setEmployeeToDeleteId] = useState<number | null>(null);
+
+  // Load custom font on component mount
+  useEffect(() => {
+    fontLoader();
+  }, [employees]);
+
+  // --- Modal and Action Handlers ---
+
+  const handleSignOut = () => {
+    setIsSignOutModalOpen(true);
+  };
+
+  const confirmSignOut = () => {
+    setIsSignOutModalOpen(false);
+    localStorage.removeItem("token");
+    router.push("/login");
+  };
+
+  const openEditModal = (employee: Employee) => {
+    setCurrentEmployee(employee);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setCurrentEmployee(null);
+  };
+
+  const handleUpdateEmployee = async (updatedEmployee: Employee) => {
+    // The `updateEmployee` function from the hook will handle showing notifications
+    const success = await updateEmployee(updatedEmployee);
+    if (success) {
+      setIsEditModalOpen(false);
+      setCurrentEmployee(null);
     }
   };
+
+  const handleDeleteClick = (employeeId: number) => {
+    setEmployeeToDeleteId(employeeId);
+    setShowDeleteConfirmModal(true);
+  };
+
+  const confirmDeleteEmployee = async () => {
+    if (employeeToDeleteId === null) return;
+    // The `deleteEmployee` function from the hook will handle showing notifications
+    const success = await deleteEmployee(employeeToDeleteId);
+    if (success) {
+      setShowDeleteConfirmModal(false);
+    }
+    setEmployeeToDeleteId(null); // Clear the ID after operation
+  };
+
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="w-64 bg-blue-900 text-white p-4 flex flex-col">
-        <div className="flex items-center space-x-2">
-          <Image src={Img} alt="Logo" className="w-[600px] h-auto rounded-lg" />
-        </div>
-         <nav className="mt-6 space-y-4 font-saysettha">
-          <Link href="/admin" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ໝ້າຫຼັກ
-          </Link>
-          <Link href="/manage_tasks" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ການມອບວຽກ
-          </Link>
-          <Link href="/department" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ພະແນກ
-          </Link>
-          <Link href="/Division" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ຂະແໝງ
-          </Link>
-          <Link href="/employee" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ພະນັກງານ
-          </Link>
-          <Link href="/position" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ຕຳແໝ່ງ
-          </Link>
+    <div className="flex min-h-screen bg-gradient-to-br from-sky-200 via-blue-100 to-cyan-200 text-slate-800 overflow-hidden" style={{ fontFamily: 'Phetsarath OT, sans-serif' }}>
+      {/* Notification Modal: Render only if 'notification' state has data */}
+      {notification && (
+        <NotificationModal
+          isOpen={!!notification} // Will be true if notification is not null
+          onClose={clearNotification} // Allows manual closing
+          title={notification.title}
+          message={notification.message}
+        />
+      )}
 
-          <div>
-            <span className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-              ລາພັກ
-            </span>
-            <div className="ml-4">
-              <Link href="/Leave_Type/Leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ຂໍລາພັກ
-              </Link>
-              <Link href="/Leave_Type/Approve_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ອະນຸມັດລາພັກ
-              </Link>
-              <Link href="/Leave_Type/Follow_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ຕິດຕາມລາພັກ
+      {/* Sign Out Modal */}
+      <Modal
+        isOpen={isSignOutModalOpen}
+        onClose={() => setIsSignOutModalOpen(false)}
+        onConfirm={confirmSignOut}
+        title="ຢືນຢັນອອກລະບົບ"
+        message="ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?"
+        confirmText="ຕົກລົງ"
+        cancelText="ຍົກເລີກ"
+      />
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteConfirmModal}
+        onClose={() => setShowDeleteConfirmModal(false)}
+        onConfirm={confirmDeleteEmployee}
+        title="ຢືນຢັນການລຶບ"
+        message="ທ່ານແນ່ໃຈບໍວ່າຕ້ອງການລຶບພະນັກງານນີ້? ການກະທຳນີ້ບໍ່ສາມາດຍົກເລີກໄດ້."
+        confirmText="ລຶບ"
+        cancelText="ຍົກເລີກ"
+      />
+
+      {/* Employee Edit Modal */}
+      {isEditModalOpen && currentEmployee && (
+        <EmployeeEditModal
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          initialData={currentEmployee}
+          onSave={handleUpdateEmployee}
+          departments={departments}
+          divisions={divisions}
+          positions={positions}
+        />
+      )}
+
+      {/* Sidebar and Header */}
+      <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
+
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header onSignOut={handleSignOut} />
+        <Breadcrumb paths={[{ name: "ໜ້າຫຼັກ", href: "/admin" }, { name: "ພະນັກງານ" }]} />
+
+        <div className="p-6 flex-1 overflow-y-auto">
+          <div className="bg-white/90 backdrop-blur-lg rounded-xl shadow-xl border border-sky-300/60 p-6">
+            <div className="flex justify-between items-center bg-sky-100/70 p-4 rounded-lg mb-6 border border-sky-200">
+              <h3 className="text-2xl font-bold text-slate-800 font-saysettha">ພະນັກງານ</h3>
+              <Link href="/employee/add_employee" className="bg-blue-600 text-white px-5 py-2 rounded-lg flex items-center space-x-2 font-saysettha hover:bg-blue-700 transition-all duration-200 shadow-md">
+                <FaPlus className="text-lg" /> <span>ເພີ່ມພະນັກງານ</span>
               </Link>
             </div>
-            <Link href="/Attendance_Type/follow_attendance" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-              ຕິດຕາມການເຂົ້າອອກວຽກ
-            </Link>
-            <Link href="/Attendance_Type/attendance" className="flex items-center px-4 py-2 bg-red-600 text-white hover:scale-110 hover:text-white-800">
-              ການເຂົ້າ-ອອກວຽກ
-            </Link>
-          </div>
-        </nav>
 
-      </div>
+            {/* Employee Table */}
+            <div className="mt-6 max-h-[500px] overflow-y-auto overflow-x-auto rounded-lg shadow-md border border-sky-200 relative">
+              <table className="w-full border-collapse">
+                <thead className="bg-sky-200 text-slate-800 font-saysettha text-lg">
+                  <tr>
+                    <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ລຳດັບ</th>
+                    <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ຊື່ພະນັກງານ</th>
+                    <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ອີເມວ</th>
+                    <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ເບີໂທ</th>
+                    <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ຊື່ຜູ້ໃຊ້</th>
+                    <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ສິດທິ</th>
+                    <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ພະແນກ</th>
+                    <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ຂະແໜງ</th>
+                    <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ຕຳແໝ່ງ</th>
+                    <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ແກ້ໄຂ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={10} className="text-center p-4 text-gray-500 font-saysettha text-md">
+                        ກຳລັງໂຫຼດຂໍ້ມູນ...
+                      </td>
+                    </tr>
+                  ) : error ? (
+                    <tr>
+                      <td colSpan={10} className="text-center p-4 text-red-500 font-saysettha text-md">
+                        Error: {error}
+                      </td>
+                    </tr>
+                  ) : Array.isArray(employees) && employees.length > 0 ? (
+                    employees.map((employee, index) => {
+                      const employeeDepartmentId = Number(employee.Department_ID);
+                      const employeeDivisionId = Number(employee.Division_ID);
+                      const employeePositionId = Number(employee.Position_ID);
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="bg-blue-800 text-white p-4 flex justify-between items-center">
-          <h1 className="text-lg font-bold font-saysettha">ລະບົບຕິດຕາມວຽກ</h1>
-          <div className="flex items-center space-x-4 mr-30">
-            <a href="/admin">
-              <div className="inline-flex items-center gap-2">
-                <FaUserShield className="text-lg" />
-                <span className="text-base font-medium">admin</span>
-              </div>
-            </a>
-             <button onClick={handleSignUp} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition" >
-              Sign Up
-            </button>
-          </div>
-        </header>
+                      const divisionName =
+                        divisions.find(div => Number(div.Division_ID) === employeeDivisionId)?.Division_Name || "ບໍ່ພົບຂະແໜງ";
+                      const positionName =
+                        positions.find(pos => Number(pos.Position_ID) === employeePositionId)?.Position_Name || "ບໍ່ພົບຕຳແໝ່ງ";
 
-        <div className="bg-gray-100 p-4 text-sm text-gray-600 font-saysettha">
-          ໜ້າຫຼັກ / <span className="text-gray-800 font-semibold">ພະນັກງານ</span>
-        </div>
-
-        <div className="mt-6 bg-white p-6 rounded-lg shadow-lg ">
-          <div className="flex justify-between items-center bg-yellow-100 p-6">
-            <h3 className="text-xl font-bold text-black  font-saysettha">ພະນັກງານ</h3>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 font-saysettha">
-              <a href="/employee/add_employee"><FaPlus /> <span>ເພີ່ມພະນັກງານ</span></a>
-
-            </button>
-          </div>
-
-
-          <div className="mt-6 overflow-x-auto">
-            <table className="w-full border-collapse border rounded-lg shadow-md">
-              <thead className="bg-gray-200 text-black font-saysettha">
-                <tr>
-                  <th className="p-3 text-left">ຊື່ພະນັກງານ</th>
-                  <th className="p-3 text-left">ອີເມວ</th>
-                  <th className="p-3 text-left">ເບີໂທ</th>
-                  <th className="p-3 text-left">ຂະແໝງ</th>
-                  <th className="p-3 text-left">ຕຳແໝ່ງ</th>
-                  <th className="p-3 text-left">ຜູ້ໃຊ້</th>
-                  <th className="p-3 text-left">ແກ້ໄຂ</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-t text-black">
-                  <td className="p-3">Email Management & Communication</td>
-                  <td className="p-3">19/03/2024</td>
-                  <td className="p-3">21/03/2024</td>
-                  <td className="p-3">Secretaries</td>
-                  <td className="p-3">Phounphonnakhone</td>
-                  <td className="p-3 text-blue-600">To-Do</td>
-                  <td className="p-3 flex space-x-2">
-                    <FaEdit className="text-yellow-500 cursor-pointer" onClick={() => setIsModalOpen(true)} />
-                    <FaTrash className="text-red-500 cursor-pointer" />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Modal */}
-          {isModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ">
-              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md font-saysettha">
-                <h2 className="text-xl font-bold mb-4 text-black">ແກ້ໄຂຂໍ້ມູນພະນັກງານ</h2>
-                <form className="space-y-4">
-                  {['ຊື່ພະແນກ','ອີເມວ','ເບີໂທ','ຂະແໜງ','ຕຳແໝ່ງ','ຊື່ຜູ້ໃຊ້'].map(label => (
-                    <div key={label}>
-                      <label className="block text-black font-medium">{label}</label>
-                      <input type="text" className="w-full mt-1 p-2 border border-gray-300 rounded-lg text-black" placeholder={label} />
-                    </div>
-                  ))}
-                  <div className="flex justify-end space-x-2">
-                    <button type="button" className="px-4 py-2 bg-gray-400 text-white rounded-lg" onClick={() => setIsModalOpen(false)}>
-                      ຍົກເລີກ
-                    </button>
-                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg">
-                      ບັນທຶກ
-                    </button>
-                  </div>
-                </form>
-              </div>
+                      return (
+                        <tr key={employee.Employee_ID} className="even:bg-white odd:bg-sky-50 font-saysettha text-md">
+                          <td className="p-4 font-times text-lg">{index + 1}</td>
+                          <td className="p-4">{employee.Name}</td>
+                          <td className="p-4" style={{ fontFamily: "Times New Roman, serif" }}>
+                            {employee.Email}
+                          </td>
+                          <td className="p-4 font-times text-lg">{employee.Phone}</td>
+                          <td className="p-4 font-times text-lg">{employee.Username}</td>
+                          <td className="p-4 font-times text-lg">{employee.Role}</td>
+                          <td className="p-4">{employee.department?.Department_Name || "ບໍ່ພົບພະແນກ"}</td>
+                          <td className="p-4">{divisionName}</td>
+                          <td className="p-4">{positionName}</td>
+                          <td className="p-4 flex items-center space-x-2">
+                            <button
+                              onClick={() => openEditModal(employee)}
+                              className="text-yellow-500 text-xl cursor-pointer hover:text-yellow-600 transition-colors"
+                              title="ແກ້ໄຂ"
+                            >
+                              <FaEdit />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(employee.Employee_ID)}
+                              className="text-red-600 hover:text-red-700 transition-colors"
+                              title="ລຶບ"
+                            >
+                              <FaTrash />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={10} className="text-center p-4 text-gray-500 font-saysettha text-md">
+                        ບໍ່ມີຂໍ້ມູນພະນັກງານ
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
 
-          {/* Footer */}
-          <a href="/admin">
-            <footer className="bg-gray-200 p-4 text-center text-black mt-20 font-saysettha">
-              ກັບໄປໜ້າ admin
-            </footer>
-          </a>
+          </div>
         </div>
       </div>
     </div>

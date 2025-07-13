@@ -1,137 +1,224 @@
+// src/app/department/add_department/page.tsx
 'use client';
 
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState, ChangeEvent } from 'react';
-import { FaBell, FaUser, FaGavel, FaSignOutAlt, FaChartBar, FaUserShield } from 'react-icons/fa';
-import Img from "/public/img/login.jpeg";
+import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
+// import { MdSave, MdArrowBack } from 'react-icons/md'; // Icons for buttons
+// Import reusable components
+import Modal from "@/src/components/Modal";
+import NotificationModal from "@/src/components/NotificationModal";
+import Sidebar from "@/src/components/Sidebar";
+import Header from "@/src/components/Header";
+import Breadcrumb from "@/src/components/Breadcrumb";
 
-interface Department {
-  departmentName: string;
-  phone: string;
-  address: string;
-  email: string;
-  username: string;
-}
+// Import types and services
+import { AddDepartment } from "@/src/types/department";
+import { departmentService } from '@/src/services/departmentService'; // Ensure this service exists and has createDepartment method
+
+// Import fontLoader utility
+import { fontLoader } from "@/src/utils/fontLoader";
+
 
 export default function AddManageDepartment() {
-   {/* ອອກລະບົບ*/ }
   const router = useRouter();
-  const handleSignUp = () => {
-    const confirmed = window.confirm("ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?");
-    if (confirmed) {
-      router.push("/login");
+  const [newDepartment, setNewDepartment] = useState<AddDepartment>({
+    Department_Name: '',
+    Phone: '',
+    Address: '',
+    Email: '',
+    Contact_Person: '',
+  });
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Notification Modal state
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+  // New state to manage success/error for navigation logic
+  const [isSuccessNotification, setIsSuccessNotification] = useState(false);
+
+
+  // Load font on component mount
+  fontLoader();
+
+  const showNotification = useCallback((title: string, message: string, isSuccess: boolean = false) => {
+    setNotificationTitle(title);
+    setNotificationMessage(message);
+    setIsSuccessNotification(isSuccess); // Set if it's a success notification
+    setShowNotificationModal(true);
+  }, []);
+
+  const handleSignOut = () => {
+    setIsSignOutModalOpen(true);
+  };
+
+  const confirmSignOut = () => {
+    setIsSignOutModalOpen(false);
+    localStorage.removeItem("token");
+    router.push("/login");
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewDepartment(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddDepartment = async () => {
+    // Basic validation
+    if (!newDepartment.Department_Name.trim()) {
+      showNotification("ຜິດພາດ", "ກະລຸນາປ້ອນຊື່ພະແນກ.");
+      return;
+    }
+    if (!newDepartment.Email.trim()) {
+      showNotification("ຜິດພາດ", "ກະລຸນາປ້ອນອີເມວ.");
+      return;
+    }
+    if (!newDepartment.Phone.trim()) {
+      showNotification("ຜິດພາດ", "ກະລຸນາປ້ອນເບີໂທ.");
+      return;
+    }
+    if (!newDepartment.Address.trim()) {
+      showNotification("ຜິດພາດ", "ກະລຸນາປ້ອນທີ່ຢູ່.");
+      return;
+    }
+
+    try {
+      await departmentService.createDepartment(newDepartment);
+      // Pass true for success notification
+      showNotification("ສຳເລັດ", "ເພີ່ມພະແນກໃໝ່ສຳເລັດ!", true);
+
+      // Clear the form fields
+      setNewDepartment({
+        Department_Name: '',
+        Phone: '',
+        Address: '',
+        Email: '',
+        Contact_Person: '',
+      });
+      // Do NOT navigate here immediately
+    } catch (error: any) {
+      console.error("Failed to add department:", error);
+      showNotification("ຜິດພາດ", `ບໍ່ສາມາດເພີ່ມຕຳແໜ່ງໄດ້: ${error.response?.data?.message || error.message || 'ກະລຸນາລອງໃໝ່.'}`);
     }
   };
-  const [department, setDepartment] = useState<Department>({
-    departmentName: '',
-    phone: '',
-    address: '',
-    email: '',
-    username: '',
-  });
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setDepartment({ ...department, [e.target.name]: e.target.value });
+  // Function to handle closing the notification modal
+  const handleNotificationClose = () => {
+    setShowNotificationModal(false);
+    // If it was a success notification, then navigate
+    if (isSuccessNotification) {
+      router.push('/department');
+    }
   };
 
-  return (
-    <div className="flex min-h-screen bg-gray-100">
-      <div className="w-64 bg-blue-900 text-white p-4 flex flex-col">
-        <div className="flex items-center space-x-2 ">
-          <Image src={Img} alt="#" className="w-[600px] h-auto rounded-lg" />
-        </div>
-        <nav className="mt-6 space-y-4 font-saysettha">
-          <Link href="/admin" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ໝ້າຫຼັກ
-          </Link>
-          <Link href="/manage_tasks" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ການມອບວຽກ
-          </Link>
-          <Link href="/department" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ພະແນກ
-          </Link>
-          <Link href="/Division" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ຂະແໝງ
-          </Link>
-          <Link href="/employee" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ພະນັກງານ
-          </Link>
-          <Link href="/position" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-            ຕຳແໝ່ງ
-          </Link>
 
-          <div>
-            <span className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-              ລາພັກ
-            </span>
-            <div className="ml-4">
-              <Link href="/Leave_Type/Leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ຂໍລາພັກ
-              </Link>
-              <Link href="/Leave_Type/Approve_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ອະນຸມັດລາພັກ
-              </Link>
-              <Link href="/Leave_Type/Follow_leave" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-                ຕິດຕາມລາພັກ
-              </Link>
-            </div>
-            <Link href="/Attendance_Type/follow_attendance" className="flex items-center px-4 py-2 text-white-600 hover:scale-110 hover:text-white-800 hover:underline">
-              ຕິດຕາມການເຂົ້າອອກວຽກ
-            </Link>
-            <Link href="/Attendance_Type/attendance" className="flex items-center px-4 py-2 bg-red-600 text-white hover:scale-110 hover:text-white-800">
-              ການເຂົ້າ-ອອກວຽກ
-            </Link>
-          </div>
-        </nav>
-      </div>
+  return (
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-sky-200 via-blue-100 to-cyan-200 text-slate-800" style={{ fontFamily: 'Phetsarath OT, sans-serif' }}>
+      {/* Sign Out Modal */}
+      <Modal
+        isOpen={isSignOutModalOpen}
+        onClose={() => setIsSignOutModalOpen(false)}
+        onConfirm={confirmSignOut}
+        title="ຢືນຢັນອອກລະບົບ"
+        message="ທ່ານຕ້ອງການອອກລະບົບແທ້ບໍ?"
+        confirmText="ຕົກລົງ"
+        cancelText="ຍົກເລີກ"
+      />
+
+      {/* Notification Modal - now uses the new handleNotificationClose */}
+      <NotificationModal
+        isOpen={showNotificationModal}
+        onClose={handleNotificationClose} // Use the new handler here
+        title={notificationTitle}
+        message={notificationMessage}
+      />
+
+      {/* Sidebar */}
+      <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col font-saysettha">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-blue-800 text-white p-4 flex justify-between items-center">
-          <h1 className="text-lg font-bold">ລະບົບຈັດການພະແນກ</h1>
-          {/*icon*/}
-          <div className="flex items-center space-x-4 mr-30">
-            <a href="/admin"><div className="inline-flex items-center gap-2 ">
-              <FaUserShield className="text-lg" />
-              <span className="text-base font-medium">admin</span>
-            </div></a>
-            <button onClick={handleSignUp} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition" >
-              Sign Up
-            </button>
-          </div>
-        </header>
+        <Header onSignOut={handleSignOut} />
 
         {/* Breadcrumb */}
-        <div className="bg-gray-100 p-4 text-sm text-gray-600 font-saysettha">
-          ໜ້າຫຼັກ / <span className="text-gray-800">ພະແນກ / </span>
-          <span className="text-gray-800 font-semibold">ເພີ່ມພະແນກ</span>
-        </div>
+        <Breadcrumb paths={[{ name: "ໜ້າຫຼັກ", href: "/admin" }, { name: "ພະແນກ", href: "/department" }, { name: "ເພີ່ມພະແນກ" }]} />
 
-        {/* Form */}
-        <div className="p-6 font-saysettha">
-          <h2 className="text-xl font-bold text-gray-700">ເພີ່ມພະແນກ</h2>
-          <div className="grid mt-4">
-            <div className="p-6 rounded-md shadow-md bg-[#EFEAEA]">
-              <input type="text" name="departmentName" value={department.departmentName} onChange={handleChange} className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ຊື່ພະແນກ" />
-              <input type="text" name="phone" value={department.phone} onChange={handleChange} className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ເບີໂທ" />
-              <input type="text" name="address" value={department.address} onChange={handleChange} className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ທີ່ຢູ່" />
-              <input type="text" name="email" value={department.email} onChange={handleChange} className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ອີເມວ" />
-              <input type="text" name="username" value={department.username} onChange={handleChange} className="w-full mb-5 p-3 border text-black rounded-full border-gray-300" placeholder="ຊື່ຜູ້ໃຊ້" />
-
-              <div className="mt-4 flex space-x-4 font-saysettha">
-                <button onClick={() => alert('ບັນທຶກສຳເລັດ!')} className="bg-purple-500 text-white px-10 py-2 rounded-full">ບັນທຶກ</button>
-                <button onClick={() => router.push('/department')} className="bg-orange-500 text-white px-10 py-2 rounded-full">ຍົກເລີກ</button>
+        <div className="p-6 flex-1 overflow-y-auto">
+          <div className="bg-white/90 backdrop-blur-lg rounded-xl shadow-xl border border-sky-300/60 p-6">
+            <h2 className="text-2xl font-bold text-slate-800 font-saysettha mb-6">ເພີ່ມພະແນກ</h2>
+            <div className="space-y-6">
+              <div>
+                {/* <label htmlFor="Department_Name" className="block text-lg font-medium text-gray-700 mb-2">ຊື່ພະແນກ</label> */}
+                <input
+                  type="text"
+                  id="Department_Name"
+                  name="Department_Name"
+                  value={newDepartment.Department_Name}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  placeholder="ປ້ອນຊື່ພະແນກ"
+                  required
+                />
+              </div>
+              <div>
+                {/* <label htmlFor="Email" className="block text-lg font-medium text-gray-700 mb-2">ອີເມວ</label> */}
+                <input
+                  type="email"
+                  id="Email"
+                  name="Email"
+                  value={newDepartment.Email}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  placeholder="ປ້ອນອີເມວ"
+                  required
+                />
+              </div>
+              <div>
+                {/* <label htmlFor="Phone" className="block text-lg font-medium text-gray-700 mb-2 ">ເບີໂທ</label> */}
+                <input
+                  type="text"
+                  id="Phone"
+                  name="Phone"
+                  value={newDepartment.Phone}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  placeholder="ປ້ອນເບີໂທ"
+                  required
+                />
+              </div>
+              <div>
+                {/* <label htmlFor="Address" className="block text-lg font-medium text-gray-700 mb-2">ລາຍລະອຽດ</label> */}
+                <textarea
+                  id="Address"
+                  name="Address"
+                  value={newDepartment.Address}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  placeholder="ທີ່ຢູ່"
+                  required
+                ></textarea>
               </div>
 
-              {/* Footer */}
-              <a href="/admin">
-                <footer className="bg-gray-300 p-4 text-center text-black mt-20 font-saysettha">
-                  ກັບໄປໜ້າ admin
-                </footer>
-              </a>
+              <div className="flex space-x-4 mt-6">
+                <button
+                  type="button"
+                  onClick={handleAddDepartment}
+                  className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors duration-200 shadow-md font-medium text-lg"
+                >
+                  ບັນທຶກ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push('/department')}
+                  className="flex-1 bg-gray-300 text-slate-700 px-6 py-3 rounded-xl hover:bg-gray-400 transition-colors duration-200 shadow-md font-medium text-lg"
+                >
+                  ຍົກເລີກ
+                </button>
+              </div>
             </div>
           </div>
         </div>

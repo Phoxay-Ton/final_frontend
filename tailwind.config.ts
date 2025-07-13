@@ -6,6 +6,8 @@ export default {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  // tailwind.config.ts
+
   theme: {
     extend: {
       colors: {
@@ -13,9 +15,13 @@ export default {
         foreground: "var(--foreground)",
       },
       fontFamily: {
-        saysettha: ["Saysettha OT", "sans-serif"], // ເພີ່ມໄດ້ທີ່ນີ້
+        saysettha: ["Saysettha OT", "sans-serif"],
+        phetsarath: ["Phetsarath_OT", "Times New Roman", "serif"],
+        times: ["Times New Roman", "serif"],
       },
     },
   },
+
+
   plugins: [],
 } satisfies Config;
