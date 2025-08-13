@@ -41,6 +41,8 @@ export const useManageTask = (
 
     const TASK_API_BASE_URL = "http://localhost:8080/api/v1/Task";
     const ALL_DIVISIONS_API_URL = "http://localhost:8080/api/v1/Division";
+    const TASK_API_BASE = "http://localhost:8080/api/v1/Task";
+
 
     const getAuthHeaders = useCallback(() => {
         return {
@@ -96,19 +98,27 @@ export const useManageTask = (
         }
     }, [token, showNotification, TASK_API_BASE_URL]);
 
+    // Fixed fetchEmployeesByDivision function
     const fetchEmployeesByDivision = useCallback(async (divisionId: number | null) => {
-        // ป้องกัน setState ซ้ำซ้อน
+        console.log(`fetchEmployeesByDivision called with divisionId: ${divisionId}`);
+
+        // Clear employees if no division selected
         if (!divisionId || divisionId === 0) {
-            if (employees.length !== 0) setEmployees([]);
+            setEmployees([]);
             return;
         }
+
         setLoading(true);
         setError(null);
+
         try {
             console.log(`Fetching employees for division ID: ${divisionId}`);
             const response = await axios.get(`${TASK_API_BASE_URL}/all-division-employee/${divisionId}`, {
                 headers: getAuthHeaders(),
             });
+
+            console.log(`API Response for division ${divisionId}:`, response.data);
+
             const data = response.data?.data;
             if (Array.isArray(data)) {
                 setEmployees(data);
@@ -120,6 +130,7 @@ export const useManageTask = (
             }
         } catch (err: any) {
             console.error(`Error fetching employees for division ${divisionId}:`, err);
+            setEmployees([]); // Clear employees on error
             const errorMessage =
                 err.response?.data?.message || err.message || "ເກີດຂໍ້ຜິດພາດໃນການໂຫຼດພະນັກງານ.";
             setError(errorMessage);
@@ -127,7 +138,7 @@ export const useManageTask = (
         } finally {
             setLoading(false);
         }
-    }, [getAuthHeaders, showNotification, TASK_API_BASE_URL, employees.length]);
+    }, [getAuthHeaders, showNotification, TASK_API_BASE_URL]); // Removed employees.length from dependencies
 
     const fetchDivisions = useCallback(async () => {
         setLoading(true);
@@ -156,106 +167,117 @@ export const useManageTask = (
         }
     }, [getAuthHeaders, showNotification, ALL_DIVISIONS_API_URL]);
 
-    const addManageTask = useCallback(async (
-        payload: AddManageTaskPayload,
-        file: File | null
-    ): Promise<boolean> => {
-        setLoading(true);
-        setError(null);
+
+    const onSave = useCallback(async (payload: AddManageTaskPayload, file: File | null): Promise<boolean> => {
         try {
             if (!token) {
-                showNotification("ຜິດພາດ", "ບໍ່ມີການເຂົ້າສູ່ລະບົບ. ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່.");
+                showNotification("ຜິດພາດ", "ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່.");
                 return false;
             }
 
             const formData = new FormData();
 
-            // Format dates to match backend expectations
-            const formatDateForBackend = (dateString: string) => {
-                if (!dateString) return null;
-                // Convert YYYY-MM-DD to ISO string with time
-                const date = new Date(dateString + 'T08:00:00.000Z');
-                return date.toISOString();
-            };
+            // เพิ่มข้อมูลฟิลด์เป็น text ลง formData
+            formData.append('task_name', payload.task_name);
+            formData.append('description', payload.description);
+            formData.append('start_date', payload.start_date);
+            formData.append('end_date', payload.end_date);
+            formData.append('employee_id', String(payload.employee_id));
+            formData.append('division_id', String(payload.division_id));
+            formData.append('status', payload.status);
 
-            const backendPayload = {
-                task_name: payload.Task_name,
-                description: payload.Description,
-                attachment: payload.Attachment,
-                employee_id: payload.Employee_ID,
-                division_id: payload.Division_ID,
-                start_date: formatDateForBackend(payload.Start_Date),
-                end_date: formatDateForBackend(payload.End_Date), // Fixed: Use End_Date instead of End_date
-                status: payload.Status,
-            };
-
-            console.log("Backend payload being sent:", backendPayload);
-
-            formData.append('data', JSON.stringify(backendPayload));
-
+            // เพิ่มไฟล์แนบถ้ามี
             if (file) {
-                formData.append('document', file);
+                formData.append('attachment', file);
             }
 
-            const response = await axios.post(`${TASK_API_BASE_URL}`, formData, {
-                headers: getFormDataAuthHeaders(),
+            // ส่ง formData ไป backend
+            const response = await axios.post(TASK_API_BASE_URL, formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    // 'Content-Type': 'multipart/form-data'  <-- ปล่อย axios ตั้งเอง
+                }
             });
 
-            if (response.status === 201 || response.status === 200) {
+            if (response.status === 200 || response.status === 201) {
                 showNotification("ສຳເລັດ", "ເພີ່ມວຽກສຳເລັດແລ້ວ!");
-                await fetchManageTasks();
+                await fetchManageTasks();  // โหลดข้อมูลใหม่
                 return true;
             } else {
                 showNotification("ຜິດພາດ", "ເພີ່ມວຽກບໍ່ສຳເລັດ.");
                 return false;
             }
-        } catch (err: any) {
-            console.error("Failed to add manage task:", err);
-            const errorMessage =
-                err.response?.data?.message || err.message || "ເກີດຂໍ້ຜິດພາດໃນການເພີ່ມວຽກ. ກະລຸນາລອງໃໝ່.";
-            showNotification("ຜິດພາດ", errorMessage);
-            setError(errorMessage);
+        } catch (error: any) {
+            showNotification("ຜິດພາດ", error.response?.data?.message || error.message || "ເກີດຂໍ້ຜິດພາດ");
             return false;
-        } finally {
-            setLoading(false);
         }
-    }, [token, showNotification, getFormDataAuthHeaders, TASK_API_BASE_URL, fetchManageTasks]);
+    }, [token, showNotification, fetchManageTasks]);
 
-    const updateManageTask = useCallback(async (updatedTask: ManageTask): Promise<boolean> => {
-        setLoading(true);
-        setError(null);
-        try {
-            if (!token) {
-                showNotification("ຜິດພາດ", "ບໍ່ມີການເຂົ້າສູ່ລະບົບ. ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່.");
+
+
+
+
+
+
+    const updateManageTask = useCallback(
+        async (updatedTask: ManageTask): Promise<boolean> => {
+            setLoading(true);
+            setError(null);
+
+            console.log("🧪 updatedTask =", updatedTask);
+
+            try {
+                if (!token) {
+                    showNotification(
+                        "ຜິດພາດ",
+                        "ບໍ່ມີການເຂົ້າສູ່ລະບົບ. ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່."
+                    );
+                    return false;
+                }
+
+                if (!updatedTask?.Task_ID) {
+                    showNotification("ຜິດພາດ", "ບໍ່ມີ Task ID ສຳລັບການອັບເດດ.");
+                    return false;
+                }
+
+                // ตัด manage_tasks_details ออกจากข้อมูลที่ส่ง
+                const { Task_ID, manage_tasks_details, ...taskData } = updatedTask;
+
+                const response = await axios.put(
+                    `${TASK_API_BASE}/${Task_ID}`,
+
+                    taskData,
+                    {
+                        headers: getAuthHeaders(),
+                    }
+                );
+
+
+                if (response.status === 200) {
+                    showNotification("ສຳເລັດ", "ອັບເດດວຽກສຳເລັດແລ້ວ.");
+                    await fetchManageTasks();
+                    return true;
+                } else {
+                    showNotification("ຜິດພາດ", "ອັບເດດວຽກບໍ່ສຳເລັດ.");
+                    return false;
+                }
+            } catch (err: any) {
+                // console.error("Failed to update task:", err);
+                const errorMessage =
+                    err.response?.data?.message ||
+                    err.message ||
+                    "ເກີດຂໍ້ຜິດພາດໃນການອັບເດດ. ກະລຸນາລອງໃໝ່.";
+                showNotification("ຜິດພາດ", errorMessage);
+                setError(errorMessage);
                 return false;
+            } finally {
+                setLoading(false);
             }
-            const { manage_tasks_details, ...taskData } = updatedTask;
+        },
+        [token, showNotification, getAuthHeaders, TASK_API_BASE, fetchManageTasks]
+    );
 
-            const response = await axios.put(
-                `${TASK_API_BASE_URL}/${updatedTask.Task_ID}`,
-                taskData,
-                { headers: getAuthHeaders() }
-            );
 
-            if (response.status === 200) {
-                showNotification("ສຳເລັດ", "ອັບເດດວຽກສຳເລັດແລ້ວ.");
-                await fetchManageTasks();
-                return true;
-            } else {
-                showNotification("ຜິດພາດ", "ອັບເດດວຽກບໍ່ສຳເລັດ.");
-                return false;
-            }
-        } catch (err: any) {
-            console.error("Failed to update task:", err);
-            const errorMessage =
-                err.response?.data?.message || err.message || "ເກີດຂໍ້ຜິດພາດໃນການອັບເດດ. ກະລຸນາລອງໃໝ່.";
-            showNotification("ຜິດພາດ", errorMessage);
-            setError(errorMessage);
-            return false;
-        } finally {
-            setLoading(false);
-        }
-    }, [token, showNotification, getAuthHeaders, TASK_API_BASE_URL, fetchManageTasks]);
 
     const deleteManageTask = useCallback(async (taskId: number): Promise<boolean> => {
         setLoading(true);
@@ -278,7 +300,7 @@ export const useManageTask = (
                 return false;
             }
         } catch (err: any) {
-            console.error("Failed to delete task:", err);
+            // console.error("Failed to delete task:", err);
             const errorMessage =
                 err.response?.data?.message || err.message || "ເກີດຂໍ້ຜິດພາດໃນການລຶບ. ກະລຸນາລອງໃໝ່.";
             showNotification("ຜິດພາດ", errorMessage);
@@ -304,7 +326,7 @@ export const useManageTask = (
         };
 
         loadInitialData();
-    }, [token, fetchManageTasks, fetchDivisions, showNotification]);
+    }, [token, fetchManageTasks, fetchDivisions]);
 
     return {
         manageTasks,
@@ -317,6 +339,6 @@ export const useManageTask = (
         fetchDivisions,
         updateManageTask,
         deleteManageTask,
-        addManageTask,
+        addManageTask: onSave,
     };
 };

@@ -4,6 +4,7 @@
 export interface AttendanceRecord {
     Attendance_ID: number;
     Employee_ID: number;
+    division?: string; // Optional if not always present
     Date: string; // "YYYY-MM-DD HH:MM:SS"
     Time_in: string; // "YYYY-MM-DD HH:MM:SS"
     Time_out: string | null; // "YYYY-MM-DD HH:MM:SS" or null
@@ -11,6 +12,9 @@ export interface AttendanceRecord {
     Notes: string | null;
     employee?: {
         Name: string;
+        division?: {
+            Division_Name: string;
+        };
     };
 }
 

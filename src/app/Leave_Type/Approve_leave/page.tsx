@@ -100,12 +100,12 @@ export default function LeaveApprovalPage() {
         if (leave) {
             setLeaveToActOn(leave);
             setActionType(type);
-            const title = type === "approve" ? "ຢືນຢັນການອະນຸມັດ" : "ຢືນຢັນການປະຕິເສດ";
+            // const title = type === "approve" ? "ຢືນຢັນການອະນຸມັດ" : "ຢືນຢັນການປະຕິເສດ";
             const message = type === "approve"
                 ? `ທ່ານຕ້ອງການອະນຸມັດການລາພັກຂອງ ${leave.employee.Name} ປະເພດ ${leave.leave_type.name} ນີ້ບໍ?`
                 : `ທ່ານຕ້ອງການປະຕິເສດການລາພັກຂອງ ${leave.employee.Name} ປະເພດ ${leave.leave_type.name} ນີ້ບໍ? ການກະທຳນີ້ບໍ່ສາມາດຍົກເລີກໄດ້.`;
 
-            setConfirmationTitle(title);
+            // setConfirmationTitle(title);
             setConfirmationMessage(message);
             setConfirmAction(() => async () => {
                 const success = await handleApproveReject(payload);

@@ -18,6 +18,21 @@ import { useManageTask } from "@/src/hooks/useManageTask";
 import { fontLoader } from "@/src/utils/fontLoader";
 
 export default function ManageTasksPage() {
+  // Wrapper for ManageTaskEditModal: (taskData, file) => Promise<boolean>
+  const handleEditModalSave = async (taskData: any, file: File | null) => {
+    if (!currentTask) return false;
+    let attachment = taskData.attachment || currentTask.Attachment || "";
+    // If file is provided, you may need to upload and get filename here (implement if needed)
+    // For now, just use the existing attachment
+    const updatedTask: ManageTask = {
+      ...currentTask,
+      ...taskData,
+      attachment,
+    };
+    const success = await updateManageTask(updatedTask);
+    if (success) setIsEditModalOpen(false);
+    return success;
+  };
   const router = useRouter();
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -162,7 +177,8 @@ export default function ManageTasksPage() {
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           initialData={currentTask}
-          onSave={handleUpdateTask}
+          onSave={handleEditModalSave}
+          showNotification={showNotification}
         />
       )}
 
@@ -192,7 +208,7 @@ export default function ManageTasksPage() {
             <div className="flex justify-between items-center bg-sky-100/70 p-4 rounded-lg mb-6 border border-sky-200">
               <h3 className="text-2xl font-bold text-slate-800 font-saysettha">ມອບວຽກ</h3>
               <Link href="/manage_tasks/add_manag_tasks" className="bg-blue-600 text-white px-5 py-2 rounded-lg flex items-center space-x-2 font-saysettha hover:bg-blue-700 transition-all duration-200 shadow-md">
-                <FaPlus className="text-lg" /> <span>ເພີ່ມວຽກໃຫ້ພະນັກງານ</span>
+                <FaPlus className="text-lg" /> <span>ເພີ່ມວຽກ</span>
               </Link>
             </div>
 

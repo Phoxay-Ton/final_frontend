@@ -230,12 +230,15 @@ export default function LeaveEditModal({
                         >
                             <option value={0}>ເລືອກຜູ້ອະນຸມັດ</option>
                             {employees
-                                .filter(emp => emp.Employee_ID !== editedLeave.Employee_ID) // Filter out the current employee
+                                .filter(emp => emp.Employee_ID !== editedLeave.Employee_ID)
+                                // Filter out the current employee
                                 .map((emp) => (
                                     <option key={emp.Employee_ID} value={emp.Employee_ID}>
                                         {emp.Name}
                                     </option>
+
                                 ))}
+
                         </select>
                     </div>
 

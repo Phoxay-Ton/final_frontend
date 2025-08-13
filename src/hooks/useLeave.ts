@@ -42,7 +42,7 @@ export const useLeave = (
                 setLeaves(data);
             } else {
                 setLeaves([]);
-                console.error("Invalid data format received for leaves:", data);
+                // console.error("Invalid data format received for leaves:", data);
                 showNotification(
                     "ຜິດພາດ",
                     "ບໍ່ສາມາດໂຫຼດຂໍ້ມູນການລາພັກໄດ້. ຮູບແບບຂໍ້ມູນບໍ່ຖືກຕ້ອງ."
@@ -95,7 +95,7 @@ export const useLeave = (
                 return false;
             }
         } catch (err: any) {
-            console.error("Error creating leave:", err);
+            // console.error("Error creating leave:", err);
             console.log("🛑 Response Error:", err.response?.data);
             showNotification("ຜິດພາດ", err.response?.data?.message || "ເກີດຂໍ້ຜິດພາດໃນການສ້າງການລາພັກ.");
             return false;
@@ -126,7 +126,7 @@ export const useLeave = (
         }
 
         try {
-            const response = await axios.get("http://localhost:8080/api/v1/Employee", {
+            const response = await axios.get("http://localhost:8080/api/v1/Employee/all-approval", {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
@@ -136,32 +136,19 @@ export const useLeave = (
             const data = response.data?.data;
 
             if (Array.isArray(data)) {
-                let filtered = [];
-
-                if (user.role === "Super_Admin") {
-                    // ✅ Super_Admin เห็นทุกคน
-                    filtered = data;
-                } else if (user.role === "Admin") {
-                    // ✅ Admin เห็นเฉพาะ Super_Admin
-                    filtered = data.filter(emp => emp.Role === "Super_Admin");
-                } else if (user.role === "User") {
-                    // ✅ User เห็นเฉพาะ Admin ที่อยู่ใน Division เดียวกัน
-                    filtered = data.filter(
-                        emp => emp.Role === "Admin" && emp.Division_ID === user.Division_ID
-                    );
-                }
-
-                setEmployees(filtered);
-                console.log("✅ Fetched employees for role:", user.role, filtered);
+                // ✅ ไม่ต้อง filter เพิ่ม เพราะ backend จัดการตาม role แล้ว
+                setEmployees(data);
+                console.log("✅ Fetched employees for role:", user.role, data);
             } else {
                 setEmployees([]);
-                console.error("⚠️ Invalid data format:", data);
+                // console.error("⚠️ Invalid data format:", data);
             }
         } catch (err) {
-            console.error("❌ Error fetching employees:", err);
+            // console.error("❌ Error fetching employees:", err);
             setEmployees([]);
         }
     }, []);
+
 
 
     // Memoized function to fetch leave types
@@ -175,7 +162,7 @@ export const useLeave = (
                 setLeaveTypes(data);
             } else {
                 setLeaveTypes([]);
-                console.error("Invalid data format received for leave types:", data);
+                // console.error("Invalid data format received for leave tຝypes:", data);
             }
         } catch (err) {
             // console.error("Error fetching leave types:", err);
@@ -213,7 +200,7 @@ export const useLeave = (
                 return false;
             }
         } catch (err: any) {
-            console.error("Failed to update leave:", err);
+            // console.error("Failed to update leave:", err);
             showNotification(
                 "ຜິດພາດ",
                 `ບໍ່ສາມາດອັບເດດການລາພັກໄດ້: ${err.response?.data?.message || err.message || "ກະລຸນາລອງໃໝ່."}`
@@ -224,13 +211,20 @@ export const useLeave = (
     // Function to delete a leave request
     const deleteLeave = async (leaveId: number): Promise<boolean> => {
         try {
+            const token = localStorage.getItem("token"); // ดึง token มาใช้
             const response = await axios.delete(
-                `http://localhost:8080/api/v1/Leave/${leaveId}`
+                `http://localhost:8080/api/v1/Leave/${leaveId}`,
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
             );
 
             if (response.status === 200) {
                 showNotification("ສຳເລັດ", "ລຶບການລາພັກສຳເລັດ!");
-                fetchLeaves(); // Refresh data after successful deletion
+                fetchLeaves(); // Refresh data
                 return true;
             } else {
                 showNotification(
@@ -240,7 +234,6 @@ export const useLeave = (
                 return false;
             }
         } catch (err: any) {
-            console.error("Failed to delete leave:", err);
             showNotification(
                 "ຜິດພາດ",
                 `ບໍ່ສາມາດລຶບການລາພັກໄດ້: ${err.response?.data?.message || err.message || "ກະລຸນາລອງໃໝ່."}`
@@ -248,6 +241,7 @@ export const useLeave = (
             return false;
         }
     };
+
 
     return {
         leaves,

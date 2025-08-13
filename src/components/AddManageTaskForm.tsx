@@ -1,865 +1,446 @@
-// 'use client';
-
-// import React, { useState, ChangeEvent, useRef, useEffect, memo } from 'react';
-// import { FaPlus, FaRegFileAlt } from 'react-icons/fa';
-// import { AddManageTaskPayload } from "@/src/types/manageTask";
-
-// interface Employee {
-//     Employee_ID: number;
-//     Name: string;
-// }
-
-// interface Division {
-//     Division_ID: number;
-//     Division_Name: string;
-// }
-// export interface AddManageTaskFormProps {
-//     onSave: (taskPayload: AddManageTaskPayload, file: File | null) => Promise<boolean>;
-//     onCancel: () => void;
-//     showNotification: (title: string, message: string) => void;
-//     employees: Employee[]; // Use the new Employee interface
-//     divisions: Division[]; // Use the new Division interface
-//     fetchEmployeesByDivision: (divisionId: number) => void;
-// }
-
-// const AddManageTaskForm = memo(({
-//     onSave,
-//     onCancel,
-//     showNotification,
-//     employees,
-//     divisions,
-//     fetchEmployeesByDivision
-// }: AddManageTaskFormProps) => {
-//     const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-//     // แยก state สำหรับ Division_ID และ Employee_ID
-//     const [divisionId, setDivisionId] = useState(0);
-//     const [employeeId, setEmployeeId] = useState(0);
-//     console.log("================Form employees:", employees);
-
-//     const [task, setTask] = useState<Omit<AddManageTaskPayload, 'Attachment'> & { document: File | null }>({
-//         Task_name: '',
-//         Description: '',
-//         Start_Date: '',
-//         End_date: '',
-//         Status: 'ກຳລັງດຳເນີນການ',
-//         Employee_ID: 0,
-//         Division_ID: 0,
-//         document: null,
-//     });
-
-//     useEffect(() => {
-//         if (divisionId > 0) {
-//             fetchEmployeesByDivision(divisionId);
-//             setEmployeeId(0);
-//             setTask(prev => ({
-//                 ...prev,
-//                 Division_ID: divisionId,
-//                 Employee_ID: 0,
-//             }));
-//         } else {
-//             // ไม่ต้อง fetchEmployeesByDivision(null) และไม่ต้อง setEmployeeId(0) ซ้ำ
-//             setTask(prev => ({
-//                 ...prev,
-//                 Division_ID: 0,
-//                 Employee_ID: 0,
-//             }));
-//         }
-//         console.log(",,,,,,,,,divisions updated in page:", divisions);
-
-//         // eslint-disable-next-line react-hooks/exhaustive-deps
-//     }, [divisionId]);
-
-//     useEffect(() => {
-//         setTask(prev => ({
-//             ...prev,
-//             Employee_ID: employeeId,
-//         }));
-//     }, [employeeId]);
-
-//     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-//         const { name, value } = e.target;
-//         if (name === "Division_ID") {
-//             setDivisionId(parseInt(value) || 0);
-//         } else if (name === "Employee_ID") {
-//             setEmployeeId(parseInt(value) || 0);
-//         } else {
-//             setTask(prevTask => ({
-//                 ...prevTask,
-//                 [name]: value
-//             }));
-//         }
-//     };
-
-//     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-//         const file = e.target.files?.[0];
-//         if (file) {
-//             if (file.size > 5 * 1024 * 1024) {
-//                 showNotification("ໄຟລ໌ໃຫຍ່ເກີນໄປ", "ຂະໜາດໄຟລ໌ຕ້ອງບໍ່ເກີນ 5MB.");
-//                 setTask(prevTask => ({ ...prevTask, document: null }));
-//                 if (fileInputRef.current) fileInputRef.current.value = '';
-//                 return;
-//             }
-//             const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-//             if (!allowedTypes.includes(file.type)) {
-//                 showNotification("ປະເພດໄຟລ໌ບໍ່ຮອງຮັບ", "ກະລຸນາເລືອກໄຟລ໌ PDF, DOC, DOCX, ຫຼື TXT.");
-//                 setTask(prevTask => ({ ...prevTask, document: null }));
-//                 if (fileInputRef.current) fileInputRef.current.value = '';
-//                 return;
-//             }
-
-//             setTask(prevTask => ({ ...prevTask, document: file }));
-//         } else {
-//             setTask(prevTask => ({ ...prevTask, document: null }));
-//         }
-//     };
-
-//     const handleClickFile = () => {
-//         fileInputRef.current?.click();
-//     };
-
-//     const getEmployeeName = (employeeId: number): string => {
-//         const employee = employees.find(emp => emp.Employee_ID === employeeId);
-//         return employee ? employee.Name : 'ບໍ່ພົບພະນັກງານ';
-//     };
-
-//     const getDivisionName = (divisionId: number): string => {
-//         const division = divisions.find(div => div.Division_ID === divisionId);
-//         return division ? division.Division_Name : 'ບໍ່ພົບຂະແໜງ';
-//     };
-
-//     const handleSubmit = async (e: React.FormEvent) => {
-//         e.preventDefault();
-
-//         if (!task.Task_name || !task.Description || !task.Start_Date || !task.End_date || task.Employee_ID === 0 || task.Division_ID === 0) {
-//             showNotification("ຂໍ້ມູນບໍ່ຄົບຖ້ວນ", "ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ.");
-//             return;
-//         }
-
-//         if (new Date(task.Start_Date) > new Date(task.End_date)) {
-//             showNotification("ວັນທີບໍ່ຖືກຕ້ອງ", "ວັນທີເລີ່ມຕ້ອງບໍ່ຫຼັງວັນທີສິ້ນສຸດ.");
-//             return;
-//         }
-
-//         const payload: AddManageTaskPayload = {
-//             Task_name: task.Task_name,
-//             Description: task.Description,
-//             Attachment: task.document ? task.document.name : '',
-//             Employee_ID: task.Employee_ID,
-//             Division_ID: task.Division_ID,
-//             Start_Date: task.Start_Date,
-//             End_date: task.End_date,
-//             Status: task.Status,
-//         };
-
-//         try {
-//             const success = await onSave(payload, task.document);
-//             if (success) {
-//                 setTask({
-//                     Task_name: '',
-//                     Description: '',
-//                     Start_Date: '',
-//                     End_date: '',
-//                     Status: 'ກຳລັງດຳເນີນການ',
-//                     Employee_ID: 0,
-//                     Division_ID: 0,
-//                     document: null,
-//                 });
-//                 setDivisionId(0);
-//                 setEmployeeId(0);
-//                 if (fileInputRef.current) fileInputRef.current.value = '';
-//             }
-//         } catch (error) {
-//             showNotification("ຜິດພາດ", "ບໍ່ສາມາດບັນທຶກວຽກໄດ້. ກະລຸນາລອງໃໝ່.");
-//         }
-//     };
-
-//     return (
-//         <div className="bg-white/90 backdrop-blur-lg rounded-lg shadow-md border border-sky-200 p-6">
-//             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-//                 {/* Left Column */}
-//                 <div className="space-y-4">
-//                     <div>
-//                         <label htmlFor="Task_name" className="block text-sm font-medium text-gray-700 mb-2 font-saysettha">
-//                             ຊື່ວຽກ
-//                         </label>
-//                         <input
-//                             type="text"
-//                             id="Task_name"
-//                             name="Task_name"
-//                             value={task.Task_name}
-//                             onChange={handleChange}
-//                             className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-800"
-//                             placeholder="ຊື່ວຽກທີ່ຖືກມອບ"
-//                             required
-//                         />
-//                     </div>
-
-//                     <div>
-//                         <label htmlFor="Start_Date" className="block text-sm font-medium text-gray-700 mb-2 font-saysettha">
-//                             ເລີ່ມວັນທີ່
-//                         </label>
-//                         <input
-//                             type="date"
-//                             id="Start_Date"
-//                             name="Start_Date"
-//                             value={task.Start_Date}
-//                             onChange={handleChange}
-//                             className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-800"
-//                             required
-//                         />
-//                     </div>
-
-//                     <div>
-//                         <label htmlFor="End_date" className="block text-sm font-medium text-gray-700 mb-2 font-saysettha">
-//                             ກຳນົດສົ່ງ
-//                         </label>
-//                         <input
-//                             type="date"
-//                             id="End_date"
-//                             name="End_date"
-//                             value={task.End_date}
-//                             onChange={handleChange}
-//                             className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-800"
-//                             required
-//                         />
-//                     </div>
-
-//                     <div>
-//                         <label className="block text-sm font-medium text-gray-700 mb-2 font-saysettha">
-//                             ສົ່ງເອກະສານ
-//                         </label>
-//                         <div className="w-full border border-gray-300 rounded-lg bg-white">
-//                             <button
-//                                 type="button"
-//                                 onClick={handleClickFile}
-//                                 className="flex items-center gap-3 px-4 py-3 w-full text-left rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors text-slate-700"
-//                             >
-//                                 <FaRegFileAlt className="text-xl text-blue-500" />
-//                                 <span className="text-sm">
-//                                     {task.document ? task.document.name : "ວາລະຖຶນມອບໃຫ້ (ເລືອກໄຟລ໌)"}
-//                                 </span>
-//                             </button>
-//                             <input
-//                                 ref={fileInputRef}
-//                                 type="file"
-//                                 accept=".pdf,.doc,.docx,.txt"
-//                                 className="hidden"
-//                                 onChange={handleFileChange}
-//                             />
-//                         </div>
-//                     </div>
-
-//                     <div>
-//                         <label htmlFor="Description" className="block text-sm font-medium text-gray-700 mb-2 font-saysettha">
-//                             ລາຍລະອຽດວຽກ
-//                         </label>
-//                         <textarea
-//                             id="Description"
-//                             name="Description"
-//                             value={task.Description}
-//                             onChange={handleChange}
-//                             placeholder="ກະລຸນາປ້ອນລາຍລະອຽດ..."
-//                             className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-800 placeholder-gray-500 resize-y min-h-[100px]"
-//                             rows={4}
-//                             required
-//                         />
-//                     </div>
-//                 </div>
-
-//                 {/* Right Column */}
-//                 <div>
-//                     <div>
-//                         <label htmlFor="Division_ID" className="block text-sm font-medium text-gray-700 mb-2 font-saysettha">
-//                             ຂະແໝງ
-//                         </label>
-//                         <select
-//                             id="Division_ID"
-//                             name="Division_ID"
-//                             value={divisionId}
-//                             onChange={handleChange}
-//                             className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-800 bg-white"
-//                             required
-//                         >
-//                             <option value={0}>ເລືອກຂະແໝງ</option>
-//                             {divisions.map(division => (
-//                                 <option key={division.Division_ID} value={division.Division_ID}>
-//                                     {division.Division_Name}
-//                                 </option>
-//                             ))}
-//                         </select>
-//                         {divisionId > 0 && (
-//                             <p className="text-xs text-blue-600 mt-1 font-saysettha">
-//                                 ເລືອກແລ້ວ: {getDivisionName(divisionId)}
-//                             </p>
-//                         )}
-//                     </div>
-
-//                     <div className="mt-4">
-//                         <label htmlFor="Employee_ID" className="block text-sm font-medium text-gray-700 mb-2 font-saysettha">
-//                             ພະນັກງານ
-//                         </label>
-//                         <select
-//                             id="Employee_ID"
-//                             name="Employee_ID"
-//                             value={employeeId}
-//                             onChange={handleChange}
-//                             className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-800 bg-white"
-//                             required
-//                         >
-//                             <option value={0}>
-//                                 {divisionId === 0 ? "ເລືອກຂະແໝງກ່ອນ" : "ເລືອກພະນັກງານ"}
-//                             </option>
-//                             {divisionId > 0 && employees.map(employee => (
-//                                 <option key={employee.Employee_ID} value={employee.Employee_ID}>
-//                                     {employee.Name}
-//                                 </option>
-//                             ))}
-//                         </select>
-//                         {employeeId > 0 && (
-//                             <p className="text-xs text-blue-600 mt-1 font-saysettha">
-//                                 ເລືອກແລ້ວ: {getEmployeeName(employeeId)}
-//                             </p>
-//                         )}
-//                     </div>
-
-//                     {/* <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-//                         <h4 className="text-sm font-medium text-blue-800 mb-2 font-saysettha">ສະຫຼຸບການມອບວຽກ:</h4>
-//                         <div className="text-xs text-blue-700 space-y-1 font-saysettha">
-//                             <p><strong>ພະນັກງານ:</strong> {employeeId > 0 ? getEmployeeName(employeeId) : 'ຍັງບໍ່ໄດ້ເລືອກ'}</p>
-//                             <p><strong>ຂະແໝງ:</strong> {divisionId > 0 ? getDivisionName(divisionId) : 'ຍັງບໍ່ໄດ້ເລືອກ'}</p>
-//                             <p><strong>ສະຖານະ:</strong> {task.Status}</p>
-//                         </div>
-//                     </div> */}
-//                 </div>
-
-//                 <div className="md:col-span-2 flex justify-end space-x-4 pt-4">
-//                     <button
-//                         type="button"
-//                         onClick={onCancel}
-//                         className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-saysettha"
-//                     >
-//                         ຍົກເລີກ
-//                     </button>
-//                     <button
-//                         type="submit"
-//                         className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-saysettha flex items-center gap-2"
-//                     >
-//                         <FaPlus className="text-sm" />
-//                         ບັນທຶກ
-//                     </button>
-//                 </div>
-//             </form>
-//         </div>
-//     );
-// });
-
-// export default AddManageTaskForm;
-
-
-
+// src/components/forms/AddManageTaskForm.tsx
 'use client';
 
-import React, { useState, ChangeEvent, useRef, memo, useEffect, useCallback } from 'react';
-interface AddManageTaskPayload {
-    Task_name: string;
-    Description: string;
-    Attachment: string; // Storing file name here, actual file handled separately
-    Employee_ID: number;
-    Division_ID: number;
-    Start_Date: string;
-    End_Date: string;
-    Status: string;
+import React, {
+    useState, useEffect, useCallback, useRef, ChangeEvent, memo
+} from "react";
+
+// ✅ Interface รวมทุกอย่างที่ต้องใช้และ export
+export interface AddManageTaskPayload {
+    task_name: string;
+    description: string;
+    attachment: string; // เป็นชื่อไฟล์ (string)
+    employee_id: number;
+    division_id: number;
+    start_date: string;
+    end_date: string;
+    status: string;
 }
 
-interface Employee {
+export interface Employee {
     Employee_ID: number;
     Name: string;
 }
 
-interface Division {
+export interface Division {
     Division_ID: number;
     Division_Name: string;
 }
 
+// ✅ รวม Props ที่ต้องใช้ทั้งหมดใน Form Component
 export interface AddManageTaskFormProps {
-    onSave: (taskPayload: AddManageTaskPayload, file: File | null) => Promise<boolean>;
+    onSave: (formData: FormData) => Promise<boolean>;
     onCancel: () => void;
     showNotification: (title: string, message: string) => void;
-    employees: Employee[];
-    divisions: Division[];
-    fetchEmployeesByDivision: (Division_ID: number) => void;
-    loadingData?: boolean; // Optional, similar to previous component
-    errorData?: string | null; // Optional, similar to previous component
 }
 
+// 🟢 Component
 const AddManageTaskForm = memo(({
-    onSave, onCancel, showNotification, employees, divisions, fetchEmployeesByDivision, loadingData, errorData
+    onSave,
+    onCancel,
+    showNotification
 }: AddManageTaskFormProps) => {
-    // State to manage the task input fields and the selected document file
-    const [task, setTask] = useState<Omit<AddManageTaskPayload, 'Attachment'> & { document: File | null }>(
-        {
-            Task_name: '',
-            Description: '',
-            Start_Date: '',
-            End_Date: '',
-            Status: 'ກຳລັງດຳເນີນການ', // Default status
-            Employee_ID: 0,
-            Division_ID: 0,
-            document: null // Holds the actual file object
-        }
-    );
 
-    // Ref for the hidden file input to programmatically trigger a click
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    // State รวมข้อมูลฟอร์ม (attachment เป็น File | null)
+    const [task, setTask] = useState<Omit<AddManageTaskPayload, 'attachment'> & { attachment: File | null }>({
+        task_name: '',
+        description: '',
+        start_date: '',
+        end_date: '',
+        status: 'ກຳລັງດຳເນີນການ',
+        division_id: 0,
+        employee_id: 0,
+        attachment: null
+    });
 
-    // Form submission loading state
+    const [divisions, setDivisions] = useState<Division[]>([]);
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [loadingDivisions, setLoadingDivisions] = useState(true);
+    const [loadingEmployees, setLoadingEmployees] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Track if we're currently loading employees
-    const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-    // Previous division ID to avoid unnecessary re-fetches 
-    // const prevDivisionIdRef = useRef<number>(0);
-
-    // Initial form setup: This effect runs only once when the component first mounts.
-    useEffect(() => {
-        if (fileInputRef.current) {
-            fileInputRef.current.value = ''; // Clear file input
-        }
-    }, []);
-    useEffect(() => {
-        console.log('Employees updated:', employees);
-    }, [employees]);// Empty dependency array means this runs once on mount.
-
-    // Memoized function to handle division change
-    const handleDivisionChange = useCallback(async (divisionId: number) => {
-        if (divisionId > 0) {
-            setIsLoadingEmployees(true);
-            try {
-                await fetchEmployeesByDivision(divisionId);
-            } catch (error) {
-                console.error("Error fetching employees:", error);
-                showNotification("Error", "Failed to fetch employees");
-            } finally {
-                setIsLoadingEmployees(false);
-            }
-        }
-
-        // prevDivisionIdRef.current = divisionId;
-    }
-        , [fetchEmployeesByDivision, showNotification]);
-
-
-    // Effect to handle when employees are loaded - optimized to reduce unnecessary updates
-    useEffect(() => {
-        // ตรวจสอบว่า division ถูกเปลี่ยนและมี employees ถูกโหลดมา
-        if (task.Division_ID > 0 && employees.length > 0) {
-            console.log(`Employees loaded for division ${task.Division_ID}:`, employees);
-        }
-    }, [employees, task.Division_ID]); // More specific dependencies
-
-    const handleChange = useCallback((e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-
-        // Special handling for Division_ID to trigger employee fetch
-        if (name === 'Division_ID') {
-            const divisionId = parseInt(value, 10) || 0;
-
-            // Update only Division_ID, keep other fields intact
-            setTask(prev => ({
-                ...prev,
-                Division_ID: divisionId,
-                Employee_ID: 0 // Reset employee selection when division changes
-            }));
-
-            if (divisionId > 0) {
-                handleDivisionChange(divisionId);
-            }
-        } else {
-            // For all other fields, update normally
-            setTask(prev => ({
-                ...prev,
-                [name]: name === 'Employee_ID' ? parseInt(value, 10) || 1 : value
-            }));
-        }
-    }, [handleDivisionChange]);
-
-    // Handles changes specifically for the file input
-    const handleFileChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]; // Get the first selected file
-        if (file) {
-            console.log(`File selected: ${file.name}, size: ${file.size}`);
-
-            // Validate file size (max 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                showNotification("ໄຟລ໌ໃຫຍ່ເກີນໄປ", "ຂະໜາດໄຟລ໌ຕ້ອງບໍ່ເກີນ 5MB.");
-                setTask(prev => ({ ...prev, document: null })); // Clear document state
-                if (fileInputRef.current) fileInputRef.current.value = ''; // Clear file input field
+    // ดึง divisions จาก API
+    const fetchDivisions = useCallback(async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                showNotification("ຜິດພາດ", "ບໍ່ມີການກວດສອບສິດ. ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່.");
                 return;
             }
 
-            // Validate file type
-            const allowedTypes = ['.pdf', '.doc', '.docx', '.txt'];
-            const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+            const response = await fetch('http://localhost:8080/api/v1/division', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
 
-            if (!allowedTypes.includes(fileExtension)) {
-                showNotification("ໄຟລ໌ບໍ່ຖືກຕ້ອງ", "ກະລຸນາເລືອກໄຟລ໌ປະເພດ PDF, DOC, DOCX, ຫຼື TXT.");
-                setTask(prev => ({ ...prev, document: null })); // Clear document state
-                if (fileInputRef.current) fileInputRef.current.value = ''; // Clear file input field
-                return;
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const text = await response.text();
+            const data = JSON.parse(text);
+
+            let divisionData: Division[] = [];
+            if (data.data && Array.isArray(data.data)) {
+                divisionData = data.data;
+            } else if (Array.isArray(data)) {
+                divisionData = data;
             }
 
-            setTask(prev => ({ ...prev, document: file })); // Set the selected file
-        } else {
-            setTask(prev => ({ ...prev, document: null })); // Clear document if no file is selected
+            setDivisions(divisionData);
+        } catch (error: any) {
+            console.error("Failed to fetch divisions:", error);
+            setDivisions([]);
+            showNotification("ຜິດພາດ", `ບໍ່ສາມາດໂຫຼດຂະແໜງໄດ້: ${error.message}`);
+        } finally {
+            setLoadingDivisions(false);
         }
     }, [showNotification]);
 
-    // Handles form submission
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault(); // Prevent default browser form submission
-
-        if (isSubmitting) {
-            console.log("Form is already submitting, ignoring duplicate submission");
+    // ดึง employees ตาม division id
+    const fetchEmployeesByDivision = useCallback(async (divisionId: number) => {
+        if (divisionId === 0) {
+            setEmployees([]);
             return;
         }
+
+        setLoadingEmployees(true);
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                showNotification("ຜິດພາດ", "ບໍ່ມີການກວດສອບສິດ. ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່.");
+                return;
+            }
+
+            const apiUrl = `http://localhost:8080/api/v1/Task/all-division-employee/${divisionId}`;
+
+            const response = await fetch(apiUrl, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const text = await response.text();
+            const data = JSON.parse(text);
+
+            let employeeData: Employee[] = [];
+            if (data.data && Array.isArray(data.data)) {
+                employeeData = data.data;
+            } else if (Array.isArray(data)) {
+                employeeData = data;
+            }
+
+            setEmployees(employeeData);
+
+        } catch (error: any) {
+            console.error("Failed to fetch employees:", error);
+            setEmployees([]);
+            showNotification("ຜິດພາດ", `ບໍ່ສາມາດໂຫຼດພະນັກງານໄດ້: ${error.message}`);
+        } finally {
+            setLoadingEmployees(false);
+        }
+    }, [showNotification]);
+
+    useEffect(() => {
+        fetchDivisions();
+    }, [fetchDivisions]);
+
+    useEffect(() => {
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    }, []);
+
+    // อัปเดตข้อมูลฟอร์มเมื่อ input เปลี่ยน
+    const handleChange = useCallback((e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+
+        if (name === 'division_id') {
+            const divisionId = parseInt(value, 10) || 0;
+
+            setTask(prev => ({
+                ...prev,
+                division_id: divisionId,
+                employee_id: 0 // reset employee_id เวลาข้าม division
+            }));
+
+            if (divisionId > 0) {
+                fetchEmployeesByDivision(divisionId);
+            } else {
+                setEmployees([]);
+            }
+        } else if (name === 'employee_id') {
+            setTask(prev => ({
+                ...prev,
+                employee_id: parseInt(value, 10) || 0
+            }));
+        } else {
+            setTask(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
+    }, [fetchEmployeesByDivision]);
+
+    // เลือกไฟล์แนบ
+    const handleFileChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+
+        console.log("[DEBUG] Selected file:", file);
+
+        if (file) {
+            const allowedTypes = ['.pdf', '.doc', '.docx', '.txt'];
+            const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+
+            if (file.size > 50 * 1024 * 1024) {
+                showNotification("ໄຟລ໌ໃຫຍ່ເກີນໄປ", "ຂະໜາດໄຟລ໌ຕ້ອງບໍ່ເກີນ 50MB.");
+                if (fileInputRef.current) fileInputRef.current.value = '';
+                setTask(prev => ({ ...prev, attachment: null }));
+                console.log("[DEBUG] File too large, attachment set to null");
+                return;
+            }
+
+            if (!allowedTypes.includes(ext)) {
+                showNotification("ໄຟລ໌ບໍ່ຖືກຕ້ອງ", "ກະລຸນາເລືອກໄຟລ໌ PDF/DOC/DOCX/TXT.");
+                if (fileInputRef.current) fileInputRef.current.value = '';
+                setTask(prev => ({ ...prev, attachment: null }));
+                console.log("[DEBUG] File type not allowed, attachment set to null");
+                return;
+            }
+
+            setTask(prev => ({ ...prev, attachment: file }));
+            console.log("[DEBUG] File accepted, attachment updated:", file.name);
+        } else {
+            // กรณียกเลิกเลือกไฟล์
+            setTask(prev => ({ ...prev, attachment: null }));
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            console.log("[==============DEBUG] No file selected, attachment set to null");
+        }
+    }, [showNotification]);
+
+
+    // Submit form
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (isSubmitting) return;
 
         setIsSubmitting(true);
 
         try {
-            // Destructure task properties for easier access and validation
-            const { Task_name, Description, Start_Date, End_Date, Employee_ID, Division_ID } = task;
+            const {
+                task_name,
+                description,
+                start_date,
+                end_date,
+                division_id,
+                employee_id,
+                attachment
+            } = task;
 
-            console.log("Form submission started with data:", {
-                Task_name,
-                Description,
-                Start_Date,
-                End_Date,
-                Employee_ID,
-                Division_ID,
-                document: task.document?.name
-            });
-
-            // Basic form validation
-            if (!Task_name.trim()) {
-                showNotification("ຂໍ້ມູນບໍ່ຄົບຖ້ວນ", "ກະລຸນາປ້ອນຊື່ວຽກ.");
+            // Validate
+            if (!task_name.trim()) {
+                showNotification("ຂໍ້ມູນບໍ່ຄົບ", "ກະລຸນາໃສ່ຊື່ວຽກ");
+                setIsSubmitting(false);
+                return;
+            }
+            if (!description.trim()) {
+                showNotification("ຂໍ້ມູນບໍ່ຄົບ", "ກະລຸນາໃສ່ລາຍລະອຽດວຽກ");
+                setIsSubmitting(false);
+                return;
+            }
+            if (!start_date) {
+                showNotification("ຂໍ້ມູນບໍ່ຄົບ", "ກະລຸນາເລືອກວັນເລີ່ມຕົ້ນ");
+                setIsSubmitting(false);
+                return;
+            }
+            if (!end_date) {
+                showNotification("ຂໍ້ມູນບໍ່ຄົບ", "ກະລຸນາເລືອກວັນສິ້ນສຸດ");
+                setIsSubmitting(false);
+                return;
+            }
+            if (division_id === 0) {
+                showNotification("ຂໍ້ມູນບໍ່ຄົບ", "ກະລຸນາເລືອກຂະແໜງ");
+                setIsSubmitting(false);
+                return;
+            }
+            if (employee_id === 0) {
+                showNotification("ຂໍ້ມູນບໍ່ຄົບ", "ກະລຸນາເລືອກພະນັກງານ");
+                setIsSubmitting(false);
+                return;
+            }
+            if (new Date(start_date) > new Date(end_date)) {
+                showNotification("ວັນຜິດພາດ", "ວັນເລີ່ມຕ້ອງບໍ່ເກົ່າກວ່າວັນສິ້ນສຸດ");
+                setIsSubmitting(false);
+                return;
+            }
+            if (!employees.find(e => e.Employee_ID === employee_id)) {
+                showNotification("ຜິດພາດ", "ພະນັກງານບໍ່ຖືກຕ້ອງ");
+                setIsSubmitting(false);
                 return;
             }
 
-            if (!Description.trim()) {
-                showNotification("ຂໍ້ມູນບໍ່ຄົບຖ້ວນ", "ກະລຸນາປ້ອນລາຍລະອຽດວຽກ.");
-                return;
+            // สร้าง FormData สำหรับ multipart/form-data
+            const formData = new FormData();
+            formData.append('task_name', task_name.trim());
+            formData.append('description', description.trim());
+            formData.append('start_date', start_date);
+            formData.append('end_date', end_date);
+            formData.append('division_id', String(division_id));
+            formData.append('employee_id', String(employee_id));
+            formData.append('status', task.status);
+            if (attachment) {
+                formData.append('attachment', attachment);
             }
 
-            if (!Start_Date) {
-                showNotification("ຂໍ້ມູນບໍ່ຄົບຖ້ວນ", "ກະລຸນາເລືອກວັນທີເລີ່ມ.");
-                return;
-            }
-
-            if (!End_Date) {
-                showNotification("ຂໍ້ມູນບໍ່ຄົບຖ້ວນ", "ກະລຸນາເລືອກວັນທີສິ້ນສຸດ.");
-                return;
-            }
-
-            if (Division_ID === 0) {
-                showNotification("ຂໍ້ມູນບໍ່ຄົບຖ້ວນ", "ກະລຸນາເລືອກຂະແນງ.");
-                return;
-            }
-
-            if (Employee_ID === 0) {
-                showNotification("ຂໍ້ມູນບໍ່ຄົບຖ້ວນ", "ກະລຸນາເລືອກພະນັກງານທີ່ຮັບຜິດຊອບ.");
-                return;
-            }
-
-            // Date validation: Start Date must not be after End Date
-            const startDate = new Date(Start_Date);
-            const endDate = new Date(End_Date);
-
-            if (startDate > endDate) {
-                showNotification("ວັນທີບໍ່ຖືກຕ້ອງ", "ວັນທີເລີ່ມຕ້ອງບໍ່ຫຼັງວັນທີສິ້ນສຸດ.");
-                return;
-            }
-
-            // Validate that the selected employee exists in the current employee list
-            const selectedEmployee = employees.find(emp => emp.Employee_ID === Employee_ID);
-            if (!selectedEmployee) {
-                showNotification("ຂໍ້ມູນບໍ່ຖືກຕ້ອງ", "ພະນັກງານທີ່ເລືອກບໍ່ມີໃນຂະແນງນີ້. ກະລຸນາເລືອກໃໝ່.");
-                return;
-            }
-
-            // Construct the payload for the onSave function
-            const payload: AddManageTaskPayload = {
-                Task_name: Task_name.trim(),
-                Description: Description.trim(),
-                Attachment: task.document ? task.document.name : '', // Send file name as Attachment string
-                Employee_ID,
-                Division_ID,
-                Start_Date,
-                End_Date,
-                Status: task.Status
-            };
-
-            console.log("Payload being sent:", payload);
-
-            // Call the onSave prop with the payload and the actual file
-            const success = await onSave(payload, task.document);
-
+            // ส่ง formData ไปที่ onSave (เปลี่ยน signature ให้รับ FormData)
+            const success = await onSave(formData);
             if (success) {
-                console.log("Task saved successfully, resetting form");
-                // Reset form fields upon successful save
                 setTask({
-                    Task_name: '',
-                    Description: '',
-                    Start_Date: '',
-                    End_Date: '',
-                    Status: 'ກຳລັງດຳເນີນການ',
-                    Employee_ID: 0,
-                    Division_ID: 0,
-                    document: null
+                    task_name: '',
+                    description: '',
+                    start_date: '',
+                    end_date: '',
+                    status: 'ກຳລັງດຳເນີນການ',
+                    division_id: 0,
+                    employee_id: 0,
+                    attachment: null
                 });
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = ''; // Clear the file input visually
-                }
-                // prevDivisionIdRef.current = 0; // Reset division ref
-                showNotification("ສຳເລັດ", "ບັນທຶກວຽກສຳເລັດແລ້ວ.");
-            } else {
-                console.log("Task save failed");
-                showNotification("ຜິດພາດ", "ບໍ່ສາມາດບັນທຶກວຽກໄດ້. ກະລຸນາລອງໃໝ່.");
+                setEmployees([]);
+                if (fileInputRef.current) fileInputRef.current.value = '';
             }
-        } catch (error) {
-            console.error("Error saving task:", error);
-            showNotification("ຜິດພາດ", "ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ. ກະລຸນາລອງໃໝ່.");
+        } catch (err) {
+            console.error("Form submission error:", err);
+            showNotification("ຜິດພາດ", "ເກີດຂໍ້ຜິດພາດ");
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-xl p-6 md:p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">ເພີ່ມວຽກໃໝ່</h2>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* --- Left Column: Task Details --- */}
+        <div className="bg-white/90 backdrop-blur-lg rounded-xl shadow-xl border border-sky-300/60 p-6 overflow-y-auto max-h-[calc(100vh-80px)]">
+            <h2 className="text-2xl font-bold text-slate-800 font-saysettha mb-6 sticky top-0 bg-white/90 backdrop-blur-lg z-10 py-4 border-b border-sky-200 -mt-6 -mx-6 px-6">
+                ເພີ່ມວຽກໃໝ່
+            </h2>
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-6">
+
+                {/* Left Column */}
                 <div className="space-y-5">
-                    {/* Task Name Input */}
+                    <InputField
+                        label="ຊື່ວຽກ *"
+                        name="task_name"
+                        value={task.task_name}
+                        onChange={handleChange}
+                        disabled={isSubmitting}
+                    />
+                    <InputDate
+                        label="ວັນທີເລີ່ມ *"
+                        name="start_date"
+                        value={task.start_date}
+                        onChange={handleChange}
+                        disabled={isSubmitting}
+                    />
+                    <InputDate
+                        label="ວັນທີສິ້ນສຸດ *"
+                        name="end_date"
+                        value={task.end_date}
+                        onChange={handleChange}
+                        disabled={isSubmitting}
+                    />
                     <div>
-                        <label htmlFor="Task_name" className="block text-md font-medium text-gray-700 mb-1">
-                            ຊື່ວຽກ <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            id="Task_name"
-                            name="Task_name"
-                            value={task.Task_name}
-                            onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="ປ້ອນຊື່ວຽກ"
-                            required
-                            disabled={isSubmitting}
-                        />
-                    </div>
-
-                    {/* Start Date Input */}
-                    <div>
-                        <label htmlFor="Start_Date" className="block text-md font-medium text-gray-700 mb-1">
-                            ວັນທີເລີ່ມ <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="date"
-                            id="Start_Date"
-                            name="Start_Date"
-                            value={task.Start_Date}
-                            onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                            disabled={isSubmitting}
-                        />
-                    </div>
-
-                    {/* End Date Input */}
-                    <div>
-                        <label htmlFor="End_Date" className="block text-md font-medium text-gray-700 mb-1">
-                            ວັນທີສິ້ນສຸດ <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="date"
-                            id="End_Date"
-                            name="End_Date"
-                            value={task.End_Date}
-                            onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                            disabled={isSubmitting}
-                        />
-                    </div>
-
-                    {/* Description Textarea */}
-                    <div>
-                        <label htmlFor="Description" className="block text-md font-medium text-gray-700 mb-1">
-                            ລາຍລະອຽດ <span className="text-red-500">*</span>
-                        </label>
+                        <label className="block mb-1 text-sm font-medium text-slate-700">ລາຍລະອຽດ *</label>
                         <textarea
-                            id="Description"
-                            name="Description"
-                            value={task.Description}
+                            name="description"
+                            value={task.description}
                             onChange={handleChange}
                             rows={4}
-                            className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="ປ້ອນລາຍລະອຽດວຽກ..."
-                            required
                             disabled={isSubmitting}
+                            className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                            placeholder="ໃສ່ລາຍລະອຽດວຽກ..."
                         />
                     </div>
-
-                    {/* File Attachment Input */}
                     <div>
-                        <label htmlFor="attachment_file" className="block text-md font-medium text-gray-700 mb-1">
-                            ໄຟລ໌ແນບ
-                        </label>
+                        <label className="block mb-1 text-sm font-medium text-slate-700">ໄຟລ໌ແນບ</label>
                         <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled={isSubmitting}
+                            className="w-full p-3 border border-gray-300 rounded-xl bg-gray-50 text-left hover:bg-gray-100 transition-colors shadow-sm text-slate-800"
                         >
-                            {/* Replaced FaRegFileAlt with inline SVG */}
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" className="h-5 w-5 text-blue-500">
-                                <path fill="currentColor" d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V64zm384 64H256V0L384 128z" />
-                            </svg>
-                            <span className="truncate">{task.document ? task.document.name : "ເລືອກໄຟລ໌ (PDF, DOCX, TXT, Max 5MB)"}</span>
+                            {task.attachment?.name || "ເລືອກໄຟລ໌ "}
                         </button>
                         <input
                             ref={fileInputRef}
                             type="file"
-                            id="attachment_file"
                             accept=".pdf,.doc,.docx,.txt"
-                            className="hidden"
                             onChange={handleFileChange}
-                            disabled={isSubmitting}
+                            className="hidden"
                         />
-                    </div>
-                </div>
-
-                {/* --- Right Column: Assignment Details --- */}
-                <div className="space-y-5">
-                    {/* Division Select */}
-                    <div>
-                        <label htmlFor="Division_ID" className="block text-md font-medium text-gray-700 mb-1">
-                            ຂະແນງ <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            id="Division_ID"
-                            name="Division_ID"
-                            value={task.Division_ID}
-                            onChange={async (e) => {
-                                const divisionId = parseInt(e.target.value, 10) || 0;
-                                setTask(prev => ({
-                                    ...prev,
-                                    Division_ID: divisionId,
-                                    Employee_ID: 0
-                                }));
-                                await handleDivisionChange(divisionId); // ✅ ถูกต้องแล้ว
-                            }}
-
-                            className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                            disabled={isSubmitting || loadingData}
-                        >
-                            {loadingData ? (
-                                <option disabled>ກຳລັງໂຫຼດ...</option>
-                            ) : errorData ? (
-                                <option disabled>{errorData}</option>
-                            ) : (
-                                <>
-                                    <option value={0}>-- ເລືອກຂະແນງ --</option>
-                                    {divisions.map(division => (
-                                        <option key={division.Division_ID} value={division.Division_ID}>
-                                            {division.Division_Name}
-                                        </option>
-                                    ))}
-                                </>
-                            )}
-                        </select>
-                    </div>
-
-                    {/* Employee Select */}
-                    <div>
-                        <label htmlFor="Employee_ID" className="block text-md font-medium text-gray-700 mb-1">
-                            ພະນັກງານທີ່ຮັບຜິດຊອບ <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            id="Employee_ID"
-                            name="Employee_ID"
-                            value={task.Employee_ID}
-                            onChange={handleChange}
-                            className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                            disabled={task.Division_ID === 0 || isLoadingEmployees || isSubmitting}
-                        >
-                            {isLoadingEmployees ? (
-                                <option disabled>ກຳລັງໂຫຼດພະນັກງານ...</option>
-                            ) : (
-                                <>
-                                    <option value={0}>
-                                        {task.Division_ID === 0 ? "ເລືອກຂະແນງກ່ອນ" : "-- ເລືອກພະນັກງານ --"}
-                                    </option>
-                                    {employees.map(emp => (
-                                        <option key={emp.Employee_ID} value={emp.Employee_ID}>
-                                            {emp.Name}
-                                        </option>
-                                    ))}
-                                </>
-                            )}
-                        </select>
-                        {task.Division_ID > 0 && employees.length === 0 && !isLoadingEmployees && (
-                            <p className="text-sm text-gray-500 mt-1">ບໍ່ມີພະນັກງານໃນຂະແນງນີ້</p>
+                        {task.attachment && (
+                            <p className="text-sm text-green-600 mt-1">
+                                ✓ ເລືອກໄຟລ໌: {task.attachment.name}
+                            </p>
                         )}
                     </div>
-
-                    {/* Status Display (read-only for 'ກຳລັງດຳເນີນການ') */}
-                    {/* <div>
-                        <label htmlFor="Status" className="block text-md font-medium text-gray-700 mb-1">
-                            ສະຖານະ
-                        </label>
-                        <input
-                            type="text"
-                            id="Status"
-                            name="Status"
-                            value={task.Status}
-                            readOnly
-                            className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 bg-gray-100 cursor-not-allowed"
-                        />
-                    </div> */}
-
-                    {/* Simplified Debug Information - Only show when needed */}
-                    {/* {process.env.NODE_ENV === 'development' && (
-                        <div className="bg-gray-50 p-3 rounded-lg text-sm">
-                            <p><strong>Debug Info:</strong></p>
-                            <p>Division: {task.Division_ID} | Employee: {task.Employee_ID} | Employees: {employees.length}</p>
-                            <p>Loading: {isLoadingEmployees ? 'Yes' : 'No'} | Error: {errorData || 'None'}</p>
-                        </div>
-                    )} */}
                 </div>
+
+                {/* Right Column */}
+                <div className="space-y-5">
+                    <SelectField
+                        label="ຂະແໜງ *"
+                        name="division_id"
+                        value={task.division_id}
+                        onChange={handleChange}
+                        options={[
+                            { id: 0, name: "ເລືອກຂະແໜງ " },
+                            ...divisions.map(d => ({ id: d.Division_ID, name: d.Division_Name }))
+                        ]}
+                        disabled={isSubmitting}
+                        loading={loadingDivisions}
+                        error={loadingDivisions ? null : (divisions.length === 0 ? "ບໍ່ສາມາດໂຫຼດຂະແໜງໄດ້" : null)}
+                    />
+                    <SelectField
+                        label="ພະນັກງານ *"
+                        name="employee_id"
+                        value={task.employee_id}
+                        onChange={handleChange}
+                        options={[
+                            {
+                                id: 0,
+                                name: task.division_id === 0 ? "ເລືອກຂະແໜງກ່ອນ" : " ເລືອກພະນັກງານ "
+                            },
+                            ...employees.map(e => ({ id: e.Employee_ID, name: e.Name }))
+                        ]}
+                        disabled={loadingEmployees || isSubmitting || task.division_id === 0}
+                        loading={loadingEmployees}
+                        error={!loadingEmployees && task.division_id > 0 && employees.length === 0 ? "ບໍ່ມີພະນັກງານໃນຂະແໜງນີ້" : null}
+                    />
+                </div>
+
                 {/* Action Buttons */}
-                <div className="lg:col-span-2 flex justify-end space-x-4 mt-8 pt-4 border-t border-gray-200">
+                <div className="lg:col-span-2 flex justify-end space-x-4 mt-8 sticky bottom-0 bg-white/90 backdrop-blur-lg z-10 py-4 border-t border-sky-200 -mb-6 -mx-6 px-6">
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="px-6 py-3 bg-gray-300 text-slate-700 rounded-xl hover:bg-gray-400 transition-colors shadow-md font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={isSubmitting}
+                        className={`flex-1 px-6 py-3 rounded-xl transition-colors duration-200 shadow-md font-medium text-lg ${isSubmitting
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-gray-300 text-slate-700 hover:bg-gray-400'
+                            }`}
                     >
                         ຍົກເລີກ
                     </button>
                     <button
                         type="submit"
-                        className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-md font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={isSubmitting}
+                        className={`flex-1 px-6 py-3 rounded-xl transition-colors duration-200 shadow-md font-medium text-lg ${isSubmitting
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}
                     >
-                        {/* Replaced FaPlus with inline SVG */}
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="h-5 w-5">
-                            <path fill="currentColor" d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z" />
-                        </svg>
-                        <span>{isSubmitting ? 'ກຳລັງບັນທຶກ...' : 'ບັນທຶກ'}</span>
+                        {isSubmitting ? "ກຳລັງບັນທຶກ..." : "ບັນທຶກ"}
                     </button>
                 </div>
             </form>
@@ -867,6 +448,85 @@ const AddManageTaskForm = memo(({
     );
 });
 
-AddManageTaskForm.displayName = 'AddManageTaskForm';
+AddManageTaskForm.displayName = "AddManageTaskForm";
 
 export default AddManageTaskForm;
+
+// ----------------------------
+// ** Component ช่วยสร้าง Input (แยกส่วน) **
+// ----------------------------
+interface InputFieldProps {
+    label: string;
+    name: string;
+    value: string | number;
+    onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+    disabled?: boolean;
+}
+const InputField = ({ label, name, value, onChange, disabled }: InputFieldProps) => (
+    <div>
+        <label className="block mb-1 text-sm font-medium text-slate-700">{label}</label>
+        <input
+            type="text"
+            name={name}
+            value={value}
+            onChange={onChange}
+            disabled={disabled}
+            className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+        />
+    </div>
+);
+
+interface InputDateProps {
+    label: string;
+    name: string;
+    value: string;
+    onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+    disabled?: boolean;
+}
+const InputDate = ({ label, name, value, onChange, disabled }: InputDateProps) => (
+    <div>
+        <label className="block mb-1 text-sm font-medium text-slate-700">{label}</label>
+        <input
+            type="date"
+            name={name}
+            value={value}
+            onChange={onChange}
+            disabled={disabled}
+            className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+        />
+    </div>
+);
+
+interface SelectFieldProps {
+    label: string;
+    name: string;
+    value: number;
+    onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
+    options: { id: number; name: string }[];
+    disabled?: boolean;
+    loading?: boolean;
+    error?: string | null;
+}
+const SelectField = ({ label, name, value, onChange, options, disabled, loading, error }: SelectFieldProps) => (
+    <div>
+        <label className="block mb-1 text-sm font-medium text-slate-700">{label}</label>
+        <select
+            name={name}
+            value={value}
+            onChange={onChange}
+            disabled={disabled}
+            className={`w-full p-3 border rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm ${error ? 'border-red-500' : 'border-gray-300'}`}
+        >
+            {loading ? (
+                <option value="">ກຳລັງໂຫຼດ...</option>
+            ) : (
+                options.map(o => (
+                    <option key={o.id} value={o.id}>
+                        {o.name}
+                    </option>
+                ))
+            )}
+        </select>
+        {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
+    </div>
+);

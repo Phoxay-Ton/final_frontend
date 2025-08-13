@@ -116,26 +116,29 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
 
                 {/* Password */}
                 {/* Username */}
+                {/* Role Selection */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                        ຊື່ຜູ້ໃຊ້ <span className="text-red-500">*</span>
+                        ສິດການໃຊ້ງານ <span className="text-red-500">*</span>
                     </label>
-                    <input
-                        type="text"
-                        id="username"
-                        name="username"
-                        value={formData.username}
+                    <select
+                        id="role"
+                        name="role"
+                        value={formData.role}
                         onChange={onChange}
                         className="w-full p-3 border border-gray-300 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-                        placeholder="ປ້ອນຊື່ຜູ້ໃຊ້"
                         required
                         disabled={isSubmitting}
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        spellCheck="false"
-                    />
+                    >
+                        <option value="">-- ເລືອກສິດ --</option>
+                        {ROLE_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
                 </div>
+
 
                 {/* Password */}
                 <div>

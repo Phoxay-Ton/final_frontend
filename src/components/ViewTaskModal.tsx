@@ -95,7 +95,7 @@ const ViewTaskModal: React.FC<ViewTaskModalProps> = ({
         }
     };
     // userRole === 'Admin' || userRole === 'manager' || userRole === 'employee' ||
-    const canUpdateStatus = userRole === 'User';
+    const canUpdateStatus = userRole === 'User' || userRole === 'Admin';
 
     return (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50 p-4">
@@ -136,19 +136,24 @@ const ViewTaskModal: React.FC<ViewTaskModalProps> = ({
                         </span>
                     </p>
 
-                    {currentTaskData.Attachment && (
+                    {currentTaskData.Attachment ? (
                         <p className="md:col-span-2">
                             <strong>ໄຟລ໌ແນບ:</strong>{" "}
                             <a
-                                href={currentTaskData.Attachment}
+                                href={`http://localhost:8080/uploads/${encodeURIComponent(currentTaskData.Attachment)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-blue-600 hover:underline"
                             >
-                                ເປີດໄຟລ໌
+                                {currentTaskData.Attachment}
                             </a>
                         </p>
+                    ) : (
+                        <p className="md:col-span-2 text-gray-500">
+                            <strong>ໄຟລ໌ແນບ:</strong> ບໍ່ມີໄຟລ໌
+                        </p>
                     )}
+
                 </div>
 
                 {canUpdateStatus && (

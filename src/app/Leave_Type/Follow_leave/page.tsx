@@ -49,6 +49,8 @@ interface LeaveRecord {
 export default function LeaveTrackingPage() {
     const router = useRouter();
     const [leaves, setLeaves] = useState<LeaveRecord[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 20;
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -248,6 +250,12 @@ export default function LeaveTrackingPage() {
         return matchesSearchTerm && matchesStatus;
     });
 
+    // Pagination: leaves for current page
+    const paginatedLeaves = filteredLeaves.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
     // Status options for filter
     const statusOptions = [
         { value: "", label: "ທັງໝົດ" },
@@ -433,13 +441,13 @@ export default function LeaveTrackingPage() {
                                                 Error: {error}
                                             </td>
                                         </tr>
-                                    ) : filteredLeaves.length > 0 ? (
-                                        filteredLeaves.map((leave, index) => (
+                                    ) : paginatedLeaves.length > 0 ? (
+                                        paginatedLeaves.map((leave, index) => (
                                             <tr
                                                 key={leave.Leave_ID}
                                                 className="border-t border-sky-200 text-slate-700 hover:bg-sky-50/50 transition-colors"
                                             >
-                                                <td className="p-4 font-times">{index + 1}</td>
+                                                <td className="p-4 font-times">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                                                 <td className="p-4">{leave.employee?.Name ?? "-"}</td>
                                                 <td className="p-4">{leave.leave_type?.name ?? "-"}</td>
                                                 <td className="p-4 font-times text-lg">{formatDate(leave.From_date)}</td>
@@ -470,6 +478,26 @@ export default function LeaveTrackingPage() {
                                     )}
                                 </tbody>
                             </table>
+                        </div>
+                        {/* Pagination Controls */}
+                        <div className="flex justify-center items-center gap-2 mt-4">
+                            <button
+                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                className="px-3 py-1 rounded bg-sky-300 text-white disabled:bg-gray-300"
+                            >
+                                ຫນ້າກ່ອນ
+                            </button>
+                            <span className="font-saysettha">
+                                ຫນ້າ {currentPage} / {Math.ceil(filteredLeaves.length / itemsPerPage)}
+                            </span>
+                            <button
+                                onClick={() => setCurrentPage((prev) => prev + 1)}
+                                disabled={currentPage >= Math.ceil(filteredLeaves.length / itemsPerPage)}
+                                className="px-3 py-1 rounded bg-sky-300 text-white disabled:bg-gray-300"
+                            >
+                                ຫນ້າຕໍ່ໄປ
+                            </button>
                         </div>
                     </div>
                 </div>

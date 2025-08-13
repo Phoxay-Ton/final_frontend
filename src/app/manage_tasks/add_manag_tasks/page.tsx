@@ -1,3 +1,4 @@
+// src/app/AddManageTasksPage.tsx
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -11,11 +12,19 @@ import NotificationModal from "@/src/components/NotificationModal";
 import Header from "@/src/components/Header";
 import Sidebar from "@/src/components/Sidebar";
 import Breadcrumb from "@/src/components/Breadcrumb";
-import AddManageTaskForm from "@/src/components/AddManageTaskForm";
+import AddManageTaskForm from "@/src/components/AddManageTaskForm"; // Ensure this path is correct
 
-// Import types and hook
-import { useManageTask } from "@/src/hooks/useManageTask";
-import { AddManageTaskPayload } from "@/src/types/manageTask";
+// ✅ Updated interface to match the form component
+interface AddManageTaskPayload {
+  task_name: string;
+  description: string;
+  attachment: string;
+  employee_id: number;
+  division_id: number;
+  start_date: string;
+  end_date: string;
+  status: string;
+}
 
 // Import fontLoader utility
 import { fontLoader } from "@/src/utils/fontLoader";
@@ -36,16 +45,6 @@ export default function AddManageTasksPage() {
     setShowNotificationModal(true);
   }, []);
 
-  const {
-    addManageTask,
-    employees,
-    divisions,
-    loading: loadingHook,
-    error: errorHook,
-    fetchEmployeesByDivision,
-    fetchDivisions, // ✅ ถูกต้อง: ดึง fetchDivisions จาก useManageTask
-  } = useManageTask(showNotification);
-
   // Handle Logout
   const handleSignOut = () => {
     setIsSignOutModalOpen(true);
@@ -58,12 +57,49 @@ export default function AddManageTasksPage() {
     router.push("/login");
   };
 
-  const handleSaveTask = async (taskPayload: AddManageTaskPayload, file: File | null) => {
-    const success = await addManageTask(taskPayload, file);
-    if (success) {
-      router.push("/manage_tasks");
+  const handleSaveTask = async (formData: FormData): Promise<boolean> => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showNotification("ຜິດພາດ", "ບໍ່ມີການກວດສອບສິດ. ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່.");
+        router.replace("/login");
+        return false;
+      }
+
+      const response = await fetch('http://localhost:8080/api/v1/task', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        showNotification("ສຳເລັດ", "ເພີ່ມວຽກສຳເລັດແລ້ວ");
+        setTimeout(() => {
+          router.push("/manage_tasks");
+        }, 1500);
+        return true;
+      } else {
+        const errorData = await response.json();
+        let errorMessage = "ບໍ່ສາມາດເພີ່ມວຽກໄດ້";
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          const errorDetails = errorData.errors.map((err: any) => {
+            return `${err.path?.join('.')}` + ' - ' + err.message;
+          }).join('\n');
+          errorMessage = `ຂໍ້ມູນບໍ່ຖືກຕ້ອງ:\n${errorDetails}`;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+        showNotification("ຜິດພາດ", errorMessage);
+        return false;
+      }
+    } catch (error: any) {
+      console.error("Failed to add task:", error);
+      showNotification("ຜິດພາດ", "ບໍ່ສາມາດເຊື່ອມຕໍ່ກັບເຊີເວີໄດ້. ກະລຸນາລອງໃໝ່.");
+      return false;
     }
-    return success;
   };
 
   const handleCancel = () => {
@@ -81,50 +117,11 @@ export default function AddManageTasksPage() {
       router.replace("/login");
       return;
     }
+  }, [router, showNotification]);
 
-    // try {
-    //   const userData = JSON.parse(user);
-    //   if (userData.role !== "Admin") {
-    //     showNotification("ບໍ່ມີສິດ", "ທ່ານບໍ່ມີສິດເຂົ້າເຖິງໜ້ານີ້.");
-    //     router.replace("/unauthorized");
-    //   }
-    // } catch (e) {
-    //   console.error("Failed to parse user data from localStorage", e);
-    //   showNotification("ຂໍ້ມູນຜູ້ໃຊ້ບໍ່ຖືກຕ້ອງ", "ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່.");
-    //   router.replace("/login");
-    // }
-    // ✅ ถูกต้อง: เพิ่ม fetchDivisions ใน Dependency array เพื่อให้มั่นใจว่าฟังก์ชันนี้ถูกรวมในการพิจารณาของ useEffect
-  },
-    [router, showNotification, fetchDivisions]);
-
-  // ✅ ถูกต้อง: เพิ่ม useEffect เพื่อโหลด divisions เมื่อ component mount (ถ้ายังไม่ได้โหลด)
-  useEffect(() => {
-    // เงื่อนไขนี้จะทำงานเมื่อ divisions ยังว่างอยู่ และไม่ได้อยู่ในสถานะ loading หรือ error
-    if (!divisions.length && !loadingHook && !errorHook) {
-      fetchDivisions();
-    }
-    // ไม่ต้อง fetchEmployeesByDivision ตรงนี้ เพราะจะถูกเรียกเมื่อ division ถูกเลือกใน AddManageTaskForm
-  }, [divisions.length, loadingHook, errorHook, fetchDivisions]); // Dependency array ถูกต้อง
-
-  if (loadingHook) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-200 via-blue-100 to-cyan-200">
-        <p className="text-xl text-gray-600 font-saysettha">ກຳລັງໂຫຼດຂໍ້ມູນພະນັກງານ ແລະ ຂະແໜງ...</p>
-      </div>
-    );
-  }
-
-  if (errorHook) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-200 via-blue-100 to-cyan-200">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative font-saysettha text-lg" role="alert">
-          <strong className="font-bold">ເກີດຂໍ້ຜິດພາດ!</strong>
-          <span className="block sm:inline ml-2">{errorHook}</span>
-          <p className="mt-2 text-base">ບໍ່ສາມາດໂຫຼດຂໍ້ມູນທີ່ຈຳເປັນໄດ້. ກະລຸນາລອງໃໝ່.</p>
-        </div>
-      </div>
-    );
-  }
+  const handleNotificationClose = () => {
+    setShowNotificationModal(false);
+  };
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-sky-200 via-blue-100 to-cyan-200 text-slate-800" style={{ fontFamily: 'Phetsarath OT, sans-serif' }}>
@@ -140,19 +137,29 @@ export default function AddManageTasksPage() {
 
       <NotificationModal
         isOpen={showNotificationModal}
-        onClose={() => setShowNotificationModal(false)}
+        onClose={handleNotificationClose}
         title={notificationTitle}
         message={notificationMessage}
       />
 
+      {/* Sidebar: Fixed width, not scrollable. */}
       <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Main content wrapper: This is the flex column for Header, Breadcrumb, and Scrollable Content */}
+      <div className="flex-1 flex flex-col h-screen"> {/* Added h-screen to make this flex container take full height */}
+
+        {/* Header: Fixed at the top. */}
         <Header onSignOut={handleSignOut} />
 
-        <Breadcrumb paths={[{ name: "ໜ້າຫຼັກ", href: "/admin" }, { name: "ມອບວຽກ", href: "/manage_tasks" }, { name: "ເພີ່ມວຽກໃຫ້ພະນັກງານ" }]} />
+        {/* Breadcrumb: Fixed below the header. */}
+        <Breadcrumb paths={[
+          { name: "ໜ້າຫຼັກ", href: "/admin" },
+          { name: "ມອບວຽກ", href: "/manage_tasks" },
+          { name: "ເພີ່ມວຽກໃຫ້ພະນັກງານ" }
+        ]} />
 
-        <div className="p-6 flex-1 overflow-y-auto">
+        {/* Scrollable Content Area: This div takes the remaining height and will scroll. */}
+        <div className="flex-1 overflow-y-auto p-6"> {/* flex-1 ensures it fills remaining vertical space */}
           <div className="bg-white/90 backdrop-blur-lg rounded-xl shadow-xl border border-sky-300/60 p-6">
             <div className="flex justify-between items-center bg-sky-100/70 p-4 rounded-lg mb-6 border border-sky-200">
               <h3 className="text-2xl font-bold text-slate-800 font-saysettha">ເພີ່ມວຽກໃຫ້ພະນັກງານ</h3>
@@ -161,24 +168,13 @@ export default function AddManageTasksPage() {
               </Link>
             </div>
 
-            {/* ✅ สำคัญ: เพิ่ม Key prop เพื่อช่วย React ในการรักษา State ของ AddManageTaskForm */}
-            {/* ✅ ตรวจสอบว่า divisions มีข้อมูล (length > 0) ก่อน Render form */}
-            {divisions.length > 0 ? ( // ใช้ divisions.length > 0 เพื่อยืนยันว่ามีข้อมูล
-              <AddManageTaskForm
-                key="add-manage-task-form" // ✅ Key ที่ไม่เปลี่ยน จะช่วยรักษา State ภายในของ AddManageTaskForm
-                onSave={handleSaveTask}
-                onCancel={handleCancel}
-                showNotification={showNotification}
-                employees={employees}
-                divisions={divisions}
-                fetchEmployeesByDivision={fetchEmployeesByDivision}
-              />
-            ) : (
-              <div className="text-center text-gray-500 font-saysettha">
-                ກຳລັງໂຫຼດຂໍ້ມູນທີ່ຈຳເປັນ...
-                {/* อาจจะแสดงข้อความว่า "ไม่สามารถโหลดข้อมูลพนักงาน หรือ แผนกได้." ถ้า errorHook ไม่เป็น null */}
-              </div>
-            )}
+            {/* AddManageTaskForm: No internal scrolling or sticky elements here. */}
+            <AddManageTaskForm
+              onSave={handleSaveTask}
+              onCancel={handleCancel}
+              showNotification={showNotification}
+            />
+
           </div>
         </div>
       </div>

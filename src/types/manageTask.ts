@@ -31,14 +31,14 @@ export interface ManageTask {
 // Payload for creating a new task
 // This matches the format expected by the `addManageTask` function in useManageTask hook
 export interface AddManageTaskPayload {
-    Task_name: string;
-    Description: string;
-    Attachment: string;
-    Employee_ID: number;
-    Division_ID: number;
-    Start_Date: string;
-    End_Date: string; // Fixed: Changed from End_date to End_Date
-    Status: string;
+    task_name: string;
+    description: string;
+    attachment: string;
+    employee_id: number;
+    division_id: number;
+    start_date: string;
+    end_date: string; // Fixed: Changed from End_date to End_Date
+    status: string;
 }
 
 export interface BackendManageTaskPayload {

@@ -273,15 +273,14 @@ export default function AttendancePage() {
       {/* Sidebar */}
       <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
+      <div className="flex-1 flex flex-col overflow-hidden max-h-screen">
+        {/* Header - ไม่เลื่อน */}
         <Header onSignOut={handleSignOut} />
 
         {/* Breadcrumb */}
         <Breadcrumb paths={[{ name: "ໜ້າຫຼັກ", href: "/admin" }, { name: "ການເຂົ້າ-ອອກວຽກ" }]} />
 
-        <div className="p-6 flex-1 overflow-y-auto">
+        <div className="">
           <div className="bg-white/90 backdrop-blur-lg rounded-xl shadow-xl border border-sky-300/60 p-6">
             <div className="flex justify-between items-center bg-sky-100/70 p-4 rounded-lg mb-6 border border-sky-200">
               <h3 className="text-2xl font-bold text-slate-800 font-saysettha">ການເຂົ້າ-ອອກວຽກ</h3>
@@ -341,22 +340,22 @@ export default function AttendancePage() {
             </div>
 
             {/* Text input for Notes */}
-            <div className="mb-4 mt-6">
-              <label htmlFor="notes-input" className="block text-slate-700 text-lg font-bold mb-2 font-saysettha">
+            <div className="mb-2 mt-4">
+              {/* <label htmlFor="notes-input" className="block text-slate-700 text-lg font-bold mb-2 font-saysettha">
                 ເຫດຜົນ
-              </label>
+              </label> */}
               <input
                 id="notes-input"
                 type="text"
                 className="block w-full md:w-1/2 p-3 border border-sky-300 rounded-lg text-slate-700 focus:ring-blue-500 focus:border-blue-500 transition-colors font-saysettha"
-                placeholder="ພິມໝາຍເຫດຂອງທ່ານ..."
+                placeholder="ພິມເຫດຜົນຂອງທ່ານ..."
                 value={notesInput}
                 onChange={(e) => setNotesInput(e.target.value)}
               />
             </div>
 
             {/* Buttons */}
-            <div className="flex gap-4 mt-6">
+            <div className="flex gap-2 mt-4">
               <button
                 onClick={handleClockIn}
                 className="bg-green-600 text-white px-6 py-3 rounded-lg flex items-center space-x-2 font-saysettha hover:bg-green-700 transition-all duration-200 shadow-md"

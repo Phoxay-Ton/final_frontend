@@ -352,6 +352,7 @@ export default function FollowAttendancePage() {
                   <tr>
                     <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ລຳດັບ</th>
                     <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ຊື່ພະນັກງານ</th>
+                    <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ຂະແໜງ</th>
                     <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ວັນທີ</th>
                     <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ເວລາເຂົ້າ</th>
                     <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ເວລາອອກ</th>
@@ -375,6 +376,7 @@ export default function FollowAttendancePage() {
                   ) : filteredAttendanceRecords.length > 0 ? (
                     filteredAttendanceRecords.map((record, index) => {
                       const employeeName = record.employee?.Name || 'N/A';
+                      const division = record.employee?.division?.Division_Name || '-';
 
                       return (
                         <tr
@@ -383,6 +385,7 @@ export default function FollowAttendancePage() {
                         >
                           <td className="p-4 font-saysettha">{index + 1}</td>
                           <td className="p-4 font-saysettha">{employeeName}</td>
+                          <td className="p-4 font-saysettha">{division}</td>
                           <td className="p-4 font-saysettha">
                             {new Date(record.Date).toLocaleDateString('lo-LA')}
                           </td>

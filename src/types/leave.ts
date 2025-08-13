@@ -13,6 +13,9 @@ export interface Leave {
     employee_name?: string;
     leave_type_name?: string;
     approval_person_name?: string;
+    leaveapprovalhistory?: {
+        Remark: string | null;
+    }[];
 }
 
 export interface AddLeave {

@@ -178,7 +178,9 @@ export default function LeaveRequestPage() {
                                         <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ຈຳນວນມື້ພັກ</th>
                                         <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ລາຍລະອຽດ</th>
                                         <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ຜູ້ອະນຸມັດ</th>
-                                        <th className="sticky top-0 z-10 p-4 pl-10 text-left bg-sky-200">ສະຖານະ</th>                                        <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ແກ້ໄຂ</th>
+                                        <th className="sticky top-0 z-10 p-4 pl-10 text-left bg-sky-200">ສະຖານະ</th>
+                                        <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ໝາຍເຫດ</th>
+                                        <th className="sticky top-0 z-10 p-4 text-left bg-sky-200">ແກ້ໄຂ</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -208,6 +210,7 @@ export default function LeaveRequestPage() {
                                                 (emp) => emp.Employee_ID === leave.Approval_person
                                             );
                                             const approvalPersonName = approvalPerson ? approvalPerson.Name : 'N/A';
+                                            // const remark = leave.Remark;
                                             return (
                                                 <tr
                                                     key={leave.Leave_ID}
@@ -237,6 +240,9 @@ export default function LeaveRequestPage() {
                                                                     'bg-yellow-100 text-yellow-700'}`}>
                                                             {leave.Status || 'Pending'}
                                                         </span> */}
+                                                    </td>
+                                                    <td className="p-4">
+                                                        {leave.leaveapprovalhistory?.[0]?.Remark || 'ເຫດຜົນ...'}
                                                     </td>
                                                     <td className="p-4 flex space-x-3 items-center">
                                                         <FaEdit
